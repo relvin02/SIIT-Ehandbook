@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 // On web, localhost works. On Android/iOS, use the computer's local IP.
 const API_URL = Platform.OS === 'web'
   ? 'http://localhost:5000/api'
-  : 'http://192.168.0.147:5000/api';
+  : 'http://192.168.0.101:5000/api';
 
 // Create Axios instance
 const apiClient = axios.create({
