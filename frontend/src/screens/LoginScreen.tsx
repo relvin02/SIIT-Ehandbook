@@ -149,18 +149,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 Student accounts are created by the Admin. Contact your administrator if you don't have an account.
               </Text>
             </View>
-
-            <View style={styles.demoContainer}>
-              <Text style={styles.demoTitle}>Demo Credentials</Text>
-              <Text style={styles.demoText}>Admin:</Text>
-              <Text style={styles.demoValue}>
-                ADMIN001 / password123
-              </Text>
-              <Text style={styles.demoText}>Student:</Text>
-              <Text style={styles.demoValue}>
-                STU001 / password123
-              </Text>
-            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -282,33 +270,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'justify',
   },
-  demoContainer: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  demoTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 10,
-  },
-  demoText: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 8,
-  },
-  demoValue: {
-    fontSize: 12,
-    color: '#333',
-    fontFamily: 'monospace',
-    backgroundColor: '#f9f9f9',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-    marginTop: 3,
-  },
+
 });
 
 export default LoginScreen;
