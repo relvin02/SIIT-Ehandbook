@@ -1,11 +1,8 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
-// On web, localhost works. On Android/iOS, use the computer's local IP.
-const API_URL = Platform.OS === 'web'
-  ? 'http://localhost:5000/api'
-  : 'http://192.168.0.101:5000/api';
+// Use Render cloud URL for all platforms
+const API_URL = 'https://siit-ehandbook-api.onrender.com/api';
 
 // Create Axios instance
 const apiClient = axios.create({
