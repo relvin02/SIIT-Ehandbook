@@ -99,6 +99,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Student ID"
+              placeholderTextColor="#999"
               value={studentId}
               onChangeText={(text) => {
                 setStudentId(text);
@@ -112,6 +113,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Password"
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);

@@ -7,8 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,12 +21,29 @@ type BookmarksScreenProps = {
   navigation: any;
 };
 
+type AlertType = 'success' | 'error' | 'confirm';
+type AlertState = {
+  visible: boolean;
+  type: AlertType;
+  title: string;
+  message: string;
+  onConfirm?: () => void;
+};
+
 const BookmarksScreen: React.FC<BookmarksScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch();
   const { bookmarks, loading } = useSelector(
     (state: RootState) => state.bookmarks
   );
   const [refreshing, setRefreshing] = useState(false);
+
+  const [alertState, setAlertState] = useState<AlertState>({
+    visible: false, type: 'success', title: '', message: '',
+  });
+  const showAlert = (type: AlertType, title: string, message: string, onConfirm?: () => void) => {
+    setAlertState({ visible: true, type, title, message, onConfirm });
+  };
+  const closeAlert = () => setAlertState(prev => ({ ...prev, visible: false }));
 
   useEffect(() => {
     fetchBookmarks();
@@ -52,30 +69,15 @@ const BookmarksScreen: React.FC<BookmarksScreenProps> = ({ navigation }) => {
   };
 
   const handleRemoveBookmark = (bookmark: Bookmark) => {
-    Alert.alert(
-      'Remove Bookmark',
-      `Remove "${bookmark.section?.title}" from bookmarks?`,
-      [
-        {
-          text: 'Cancel',
-          onPress: () => {},
-          style: 'cancel',
-        },
-        {
-          text: 'Remove',
-          onPress: async () => {
-            try {
-              await bookmarksService.removeBookmark(bookmark.sectionId);
-              dispatch(bookmarksActions.removeBookmark(bookmark.sectionId));
-              Alert.alert('Success', 'Bookmark removed');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to remove bookmark');
-            }
-          },
-          style: 'destructive',
-        },
-      ]
-    );
+    showAlert('confirm', 'Remove Bookmark', `Remove "${bookmark.section?.title}" from bookmarks?`, async () => {
+      try {
+        await bookmarksService.removeBookmark(bookmark.sectionId);
+        dispatch(bookmarksActions.removeBookmark(bookmark.sectionId));
+        showAlert('success', 'Removed!', 'Bookmark removed successfully');
+      } catch (error) {
+        showAlert('error', 'Error', 'Failed to remove bookmark');
+      }
+    });
   };
 
   if (loading && !refreshing) {
@@ -125,6 +127,50 @@ const BookmarksScreen: React.FC<BookmarksScreenProps> = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* SweetAlert-style Modal */}
+      <Modal visible={alertState.visible} transparent animationType="fade" onRequestClose={closeAlert}>
+        <View style={styles.sweetOverlay}>
+          <View style={styles.sweetCard}>
+            <View style={[
+              styles.sweetIconCircle,
+              alertState.type === 'success' && { backgroundColor: '#E8F5E9' },
+              alertState.type === 'error' && { backgroundColor: '#FFEBEE' },
+              alertState.type === 'confirm' && { backgroundColor: '#FFF3E0' },
+            ]}>
+              <MaterialCommunityIcons
+                name={alertState.type === 'success' ? 'check-circle' : alertState.type === 'error' ? 'alert-circle' : 'help-circle'}
+                size={44}
+                color={alertState.type === 'success' ? '#4CAF50' : alertState.type === 'error' ? '#FF6B6B' : '#FF9800'}
+              />
+            </View>
+            <Text style={styles.sweetTitle}>{alertState.title}</Text>
+            <Text style={styles.sweetMessage}>{alertState.message}</Text>
+            <View style={styles.sweetButtons}>
+              {alertState.type === 'confirm' ? (
+                <>
+                  <TouchableOpacity style={styles.sweetCancelBtn} onPress={closeAlert}>
+                    <Text style={styles.sweetCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.sweetConfirmBtn, { backgroundColor: '#FF6B6B' }]}
+                    onPress={() => { closeAlert(); alertState.onConfirm?.(); }}
+                  >
+                    <Text style={styles.sweetConfirmText}>Yes, Remove</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.sweetConfirmBtn, { backgroundColor: alertState.type === 'success' ? '#4CAF50' : '#FF6B6B' }]}
+                  onPress={closeAlert}
+                >
+                  <Text style={styles.sweetConfirmText}>OK</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -241,6 +287,74 @@ const styles = StyleSheet.create({
   browseButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 14,
+  },
+  sweetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sweetCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    width: '85%',
+    maxWidth: 340,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  sweetIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sweetTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sweetMessage: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  sweetButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  sweetCancelBtn: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  sweetCancelText: {
+    color: '#666',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  sweetConfirmBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  sweetConfirmText: {
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 14,
   },
 });
