@@ -116,6 +116,16 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           <StatCard icon="account-group" label="Students" count={studentCount.toString()} />
         </View>
 
+        {/* Media Management Button */}
+        <TouchableOpacity
+          style={styles.mediaButton}
+          onPress={() => navigation.navigate('ManageMedia')}
+        >
+          <MaterialCommunityIcons name="multimedia" size={20} color="#fff" />
+          <Text style={styles.mediaButtonText}>Manage Videos & SIIT Hymn</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+
         {/* Create Button */}
         <TouchableOpacity
           style={styles.createButton}
@@ -297,6 +307,23 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: '#999',
+  },
+  mediaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginBottom: 10,
+    backgroundColor: '#1B5E20',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+  },
+  mediaButtonText: {
+    flex: 1,
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginLeft: 8,
   },
   createButton: {
     flexDirection: 'row',

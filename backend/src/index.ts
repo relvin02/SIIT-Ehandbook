@@ -13,6 +13,7 @@ import bookmarkRoutes from './routes/bookmarks.routes';
 import searchRoutes from './routes/search.routes';
 import profileRoutes from './routes/profile.routes';
 import notificationRoutes from './routes/notifications.routes';
+import mediaRoutes from './routes/media.routes';
 
 // Load environment variables
 dotenv.config();
@@ -44,6 +45,7 @@ app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

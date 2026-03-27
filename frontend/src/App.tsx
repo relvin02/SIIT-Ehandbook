@@ -19,6 +19,8 @@ import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import EditSectionScreen from './screens/EditSectionScreen';
 import AnnouncementsScreen from './screens/AnnouncementsScreen';
 import ManageUsersScreen from './screens/ManageUsersScreen';
+import SIITHymnScreen from './screens/SIITHymnScreen';
+import ManageMediaScreen from './screens/ManageMediaScreen';
 
 // Store
 import store from './store';
@@ -215,11 +217,35 @@ function AppInner() {
             options={{}}
           />
         ) : role === 'admin' ? (
-          <Stack.Screen
-            name="AdminRoot"
-            component={AdminTabs}
-            options={{}}
-          />
+          <Stack.Group>
+            <Stack.Screen
+              name="AdminRoot"
+              component={AdminTabs}
+              options={{}}
+            />
+            <Stack.Screen
+              name="SIITHymn"
+              component={SIITHymnScreen}
+              options={{
+                title: 'SIIT Hymn',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1B5E20' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="ManageMedia"
+              component={ManageMediaScreen}
+              options={{
+                title: 'Media Management',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+          </Stack.Group>
         ) : (
           <Stack.Group>
             <Stack.Screen
@@ -240,6 +266,17 @@ function AppInner() {
                 headerTitleStyle: {
                   fontWeight: 'bold',
                 },
+              }}
+            />
+            <Stack.Screen
+              name="SIITHymn"
+              component={SIITHymnScreen}
+              options={{
+                title: 'SIIT Hymn',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1B5E20' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
               }}
             />
           </Stack.Group>

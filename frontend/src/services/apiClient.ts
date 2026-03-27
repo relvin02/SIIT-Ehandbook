@@ -236,4 +236,39 @@ export const userManagementService = {
   },
 };
 
+/**
+ * Media Service (Videos, SIIT Hymn)
+ */
+export const mediaService = {
+  async getAll() {
+    const response = await apiClient.get('/media');
+    return response.data.data;
+  },
+
+  async getVideos() {
+    const response = await apiClient.get('/media/videos');
+    return response.data.data;
+  },
+
+  async getHymn() {
+    const response = await apiClient.get('/media/hymn');
+    return response.data.data;
+  },
+
+  async create(data: { title: string; type: string; url: string; description?: string; lyrics?: string; thumbnailUrl?: string; order?: number }) {
+    const response = await apiClient.post('/media', data);
+    return response.data.data;
+  },
+
+  async update(id: string, data: any) {
+    const response = await apiClient.put(`/media/${id}`, data);
+    return response.data.data;
+  },
+
+  async delete(id: string) {
+    const response = await apiClient.delete(`/media/${id}`);
+    return response.data;
+  },
+};
+
 export default apiClient;

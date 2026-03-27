@@ -184,3 +184,45 @@ export const Section = mongoose.model('Section', sectionSchema);
 export const Announcement = mongoose.model('Announcement', announcementSchema);
 export const Bookmark = mongoose.model('Bookmark', bookmarkSchema);
 export const Notification = mongoose.model('Notification', notificationSchema);
+
+// Media Schema (for Through the Years videos, SIIT Hymn audio, etc.)
+const mediaSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  type: {
+    type: String,
+    enum: ['video', 'audio'],
+    required: true,
+  },
+  url: {
+    type: String,
+    required: true,
+  },
+  description: String,
+  lyrics: String,
+  thumbnailUrl: String,
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  order: {
+    type: Number,
+    default: 0,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const Media = mongoose.model('Media', mediaSchema);

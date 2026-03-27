@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,14 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
+  Linking,
+  Dimensions,
 } from 'react-native';
 
 const seahawksLogo = require('../assets/seahawks.png');
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { announcementsService } from '../services/apiClient';
+import { announcementsService, mediaService } from '../services/apiClient';
 import { announcementsActions } from '../store';
 import { RootState } from '../store';
 import { Announcement } from '../types';
@@ -25,10 +27,31 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     (state: RootState) => state.announcements
   );
   const [refreshing, setRefreshing] = useState(false);
+  const [videos, setVideos] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAnnouncements();
+    fetchVideos();
   }, []);
+
+  const fetchVideos = async () => {
+    try {
+      const data = await mediaService.getVideos();
+      setVideos(data || []);
+    } catch (error) {
+      console.error('Failed to fetch videos:', error);
+    }
+  };
+
+  const getYouTubeThumbnail = (url: string) => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+    if (match) return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+    return null;
+  };
+
+  const openVideo = (url: string) => {
+    Linking.openURL(url);
+  };
 
   const fetchAnnouncements = async () => {
     try {
@@ -47,7 +70,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAnnouncements();
+    await Promise.all([fetchAnnouncements(), fetchVideos()]);
     setRefreshing(false);
   };
 
@@ -122,6 +145,52 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               />
             ))
           )}
+        </View>
+
+        {/* Through the Years */}
+        {videos.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🎬 Through the Years</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {videos.map((video: any) => {
+                const thumbnail = video.thumbnailUrl || getYouTubeThumbnail(video.url);
+                return (
+                  <TouchableOpacity
+                    key={video.id}
+                    style={styles.videoCard}
+                    onPress={() => openVideo(video.url)}
+                  >
+                    {thumbnail ? (
+                      <Image source={{ uri: thumbnail }} style={styles.videoThumbnail} />
+                    ) : (
+                      <View style={[styles.videoThumbnail, styles.videoPlaceholder]}>
+                        <MaterialCommunityIcons name="play-circle" size={40} color="#fff" />
+                      </View>
+                    )}
+                    <View style={styles.playOverlay}>
+                      <MaterialCommunityIcons name="play-circle" size={36} color="rgba(255,255,255,0.9)" />
+                    </View>
+                    <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* SIIT Hymn Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.hymnButton}
+            onPress={() => navigation.navigate('SIITHymn')}
+          >
+            <MaterialCommunityIcons name="music-note" size={28} color="#fff" />
+            <View style={styles.hymnTextContainer}>
+              <Text style={styles.hymnButtonTitle}>SIIT Hymn</Text>
+              <Text style={styles.hymnButtonSubtitle}>Listen & view lyrics</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
 
         {/* Info Cards */}
@@ -328,6 +397,66 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 18,
     textAlign: 'justify',
+  },
+  videoCard: {
+    width: 200,
+    marginRight: 12,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    overflow: 'hidden',
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#1B5E20',
+  },
+  videoPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playOverlay: {
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  videoTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+    padding: 10,
+  },
+  hymnButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1B5E20',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  hymnTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  hymnButtonTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  hymnButtonSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
 });
 
