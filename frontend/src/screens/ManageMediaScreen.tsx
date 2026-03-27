@@ -11,6 +11,7 @@ import {
   Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 import { mediaService } from '../services/apiClient';
 
 type AlertType = 'success' | 'error' | 'confirm';
@@ -25,8 +26,10 @@ type AlertState = {
 const ManageMediaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [mediaList, setMediaList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<any>(null);
   const [formData, setFormData] = useState({
     title: '',
     type: 'video' as 'video' | 'audio',
@@ -62,28 +65,69 @@ const ManageMediaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const resetForm = () => {
     setFormData({ title: '', type: 'video', url: '', description: '', lyrics: '' });
     setEditingId(null);
+    setSelectedFile(null);
     setShowForm(false);
   };
 
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: formData.type === 'video' ? 'video/*' : 'audio/*',
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const file = result.assets[0];
+        setSelectedFile(file);
+        if (!formData.title) {
+          setFormData(prev => ({ ...prev, title: file.name.replace(/\.[^.]+$/, '') }));
+        }
+      }
+    } catch (error) {
+      showAlert('error', 'Error', 'Failed to pick file');
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!formData.title.trim() || !formData.url.trim()) {
-      showAlert('error', 'Error', 'Title and URL are required');
+    if (!formData.title.trim()) {
+      showAlert('error', 'Error', 'Title is required');
+      return;
+    }
+
+    if (!editingId && !selectedFile) {
+      showAlert('error', 'Error', 'Please select a file to upload');
       return;
     }
 
     try {
+      setUploading(true);
+
+      let url = formData.url;
+
+      // Upload file if selected
+      if (selectedFile) {
+        const uploadResult = await mediaService.uploadFile(
+          selectedFile.uri,
+          selectedFile.name,
+          selectedFile.mimeType || (formData.type === 'video' ? 'video/mp4' : 'audio/mpeg')
+        );
+        url = mediaService.getStreamUrl(uploadResult.fileId);
+      }
+
       if (editingId) {
-        const updated = await mediaService.update(editingId, formData);
+        const updateData = { ...formData, url };
+        const updated = await mediaService.update(editingId, updateData);
         setMediaList(mediaList.map(m => m.id === editingId ? updated : m));
         showAlert('success', 'Updated!', 'Media updated successfully');
       } else {
-        const created = await mediaService.create(formData);
+        const created = await mediaService.create({ ...formData, url });
         setMediaList([created, ...mediaList]);
-        showAlert('success', 'Added!', 'Media added successfully');
+        showAlert('success', 'Added!', 'Media uploaded successfully');
       }
       resetForm();
     } catch (error) {
-      showAlert('error', 'Error', 'Failed to save media');
+      showAlert('error', 'Error', 'Failed to save media. File may be too large (max 25MB).');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -166,12 +210,29 @@ const ManageMediaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               onChangeText={text => setFormData({ ...formData, title: text })}
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder={formData.type === 'video' ? 'YouTube URL' : 'Audio URL (YouTube/Drive link)'}
-              value={formData.url}
-              onChangeText={text => setFormData({ ...formData, url: text })}
-            />
+            {/* File Picker */}
+            <TouchableOpacity style={styles.filePickerBtn} onPress={pickFile}>
+              <MaterialCommunityIcons
+                name={formData.type === 'video' ? 'video-plus' : 'music-note-plus'}
+                size={24}
+                color={selectedFile ? '#1B5E20' : '#666'}
+              />
+              <View style={styles.filePickerInfo}>
+                {selectedFile ? (
+                  <>
+                    <Text style={styles.filePickerName} numberOfLines={1}>{selectedFile.name}</Text>
+                    <Text style={styles.filePickerSize}>
+                      {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.filePickerPlaceholder}>
+                    Tap to select {formData.type === 'video' ? 'a video' : 'an audio'} file
+                  </Text>
+                )}
+              </View>
+              <MaterialCommunityIcons name="upload" size={20} color="#999" />
+            </TouchableOpacity>
 
             <TextInput
               style={styles.input}
@@ -191,8 +252,19 @@ const ManageMediaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               />
             )}
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editingId ? 'Update' : 'Add Media'}</Text>
+            <TouchableOpacity
+              style={[styles.submitButton, uploading && { opacity: 0.6 }]}
+              onPress={handleSubmit}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <View style={styles.uploadingRow}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <Text style={styles.submitButtonText}>  Uploading...</Text>
+                </View>
+              ) : (
+                <Text style={styles.submitButtonText}>{editingId ? 'Update' : 'Upload & Save'}</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -376,6 +448,40 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 14,
     color: '#333',
+  },
+  filePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderStyle: 'dashed',
+  },
+  filePickerInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  filePickerName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1B5E20',
+  },
+  filePickerSize: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 2,
+  },
+  filePickerPlaceholder: {
+    fontSize: 13,
+    color: '#999',
+  },
+  uploadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   lyricsInput: {
     minHeight: 150,

@@ -269,6 +269,33 @@ export const mediaService = {
     const response = await apiClient.delete(`/media/${id}`);
     return response.data;
   },
+
+  async uploadFile(fileUri: string, fileName: string, mimeType: string) {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: fileUri,
+      name: fileName,
+      type: mimeType,
+    } as any);
+
+    const token = await AsyncStorage.getItem('authToken');
+    const response = await fetch(`${API_URL}/media/upload`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Upload failed');
+    return data.data;
+  },
+
+  getStreamUrl(fileId: string) {
+    return `${API_URL}/media/stream/${fileId}`;
+  },
 };
 
 export default apiClient;

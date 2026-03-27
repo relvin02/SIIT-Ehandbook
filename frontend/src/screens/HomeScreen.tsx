@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,20 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
-  Linking,
   Dimensions,
+  Modal,
 } from 'react-native';
 
 const seahawksLogo = require('../assets/seahawks.png');
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Video, ResizeMode } from 'expo-av';
 import { announcementsService, mediaService } from '../services/apiClient';
 import { announcementsActions } from '../store';
 import { RootState } from '../store';
 import { Announcement } from '../types';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -28,6 +31,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
+  const [activeVideo, setActiveVideo] = useState<any>(null);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -43,15 +47,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
-  const getYouTubeThumbnail = (url: string) => {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
-    if (match) return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
-    return null;
-  };
 
-  const openVideo = (url: string) => {
-    Linking.openURL(url);
-  };
 
   const fetchAnnouncements = async () => {
     try {
@@ -152,28 +148,25 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🎬 Through the Years</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {videos.map((video: any) => {
-                const thumbnail = video.thumbnailUrl || getYouTubeThumbnail(video.url);
-                return (
-                  <TouchableOpacity
-                    key={video.id}
-                    style={styles.videoCard}
-                    onPress={() => openVideo(video.url)}
-                  >
-                    {thumbnail ? (
-                      <Image source={{ uri: thumbnail }} style={styles.videoThumbnail} />
-                    ) : (
-                      <View style={[styles.videoThumbnail, styles.videoPlaceholder]}>
-                        <MaterialCommunityIcons name="play-circle" size={40} color="#fff" />
-                      </View>
-                    )}
-                    <View style={styles.playOverlay}>
-                      <MaterialCommunityIcons name="play-circle" size={36} color="rgba(255,255,255,0.9)" />
+              {videos.map((video: any) => (
+                <TouchableOpacity
+                  key={video._id || video.id}
+                  style={styles.videoCard}
+                  onPress={() => setActiveVideo(video)}
+                >
+                  {video.thumbnailUrl ? (
+                    <Image source={{ uri: video.thumbnailUrl }} style={styles.videoThumbnail} />
+                  ) : (
+                    <View style={[styles.videoThumbnail, styles.videoPlaceholder]}>
+                      <MaterialCommunityIcons name="play-circle" size={40} color="#fff" />
                     </View>
-                    <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+                  )}
+                  <View style={styles.playOverlay}>
+                    <MaterialCommunityIcons name="play-circle" size={36} color="rgba(255,255,255,0.9)" />
+                  </View>
+                  <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
         )}
@@ -205,6 +198,30 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           />
         </View>
       </ScrollView>
+
+      {/* In-App Video Player Modal */}
+      <Modal
+        visible={!!activeVideo}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveVideo(null)}
+      >
+        <View style={styles.videoModal}>
+          <TouchableOpacity style={styles.videoModalClose} onPress={() => setActiveVideo(null)}>
+            <MaterialCommunityIcons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.videoModalTitle} numberOfLines={2}>{activeVideo?.title}</Text>
+          {activeVideo && (
+            <Video
+              source={{ uri: activeVideo.url }}
+              style={styles.videoPlayer}
+              useNativeControls
+              resizeMode={ResizeMode.CONTAIN}
+              shouldPlay
+            />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -431,6 +448,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     padding: 10,
+  },
+  videoModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  videoModalClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 6,
+  },
+  videoModalTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 40,
+  },
+  videoPlayer: {
+    width: SCREEN_WIDTH - 32,
+    height: (SCREEN_WIDTH - 32) * 9 / 16,
+    borderRadius: 10,
+    backgroundColor: '#000',
   },
   hymnButton: {
     flexDirection: 'row',
