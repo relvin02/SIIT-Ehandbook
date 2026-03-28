@@ -6,9 +6,9 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   Share,
+  Modal,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -30,8 +30,19 @@ const SectionDetailScreen: React.FC<SectionDetailScreenProps> = ({
   const [section, setSection] = useState<HandbookSection | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [alertState, setAlertState] = useState<{ visible: boolean; type: 'success' | 'error'; title: string; message: string }>({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
   const bookmarks = useSelector((state: RootState) => state.bookmarks.bookmarks);
   const dispatch = useDispatch();
+
+  const showAlert = (type: 'success' | 'error', title: string, message: string) => {
+    setAlertState({ visible: true, type, title, message });
+  };
+  const closeAlert = () => setAlertState(prev => ({ ...prev, visible: false }));
 
   useEffect(() => {
     fetchSection();
@@ -49,7 +60,7 @@ const SectionDetailScreen: React.FC<SectionDetailScreenProps> = ({
       setSection(data);
     } catch (error) {
       console.error('Failed to fetch section:', error);
-      Alert.alert('Error', 'Failed to load section');
+      showAlert('error', 'Error', 'Failed to load section');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -67,15 +78,15 @@ const SectionDetailScreen: React.FC<SectionDetailScreenProps> = ({
         await bookmarksService.removeBookmark(sectionId);
         dispatch(bookmarksActions.removeBookmark(sectionId));
         setIsBookmarked(false);
-        Alert.alert('Success', 'Bookmark removed');
+        showAlert('success', 'Removed!', 'Bookmark removed');
       } else {
         const bookmark = await bookmarksService.addBookmark(sectionId);
         dispatch(bookmarksActions.addBookmark(bookmark));
         setIsBookmarked(true);
-        Alert.alert('Success', 'Bookmark added');
+        showAlert('success', 'Success', 'Bookmark added');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to toggle bookmark');
+      showAlert('error', 'Error', 'Failed to toggle bookmark');
     }
   };
 
@@ -183,6 +194,38 @@ const SectionDetailScreen: React.FC<SectionDetailScreenProps> = ({
           </View>
         </View>
       </ScrollView>
+
+      {/* SweetAlert Modal */}
+      <Modal
+        visible={alertState.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeAlert}
+      >
+        <View style={styles.alertOverlay}>
+          <View style={styles.alertCard}>
+            <View style={[
+              styles.alertIconCircle,
+              alertState.type === 'success' && { backgroundColor: '#E8F5E9' },
+              alertState.type === 'error' && { backgroundColor: '#FFEBEE' },
+            ]}>
+              <MaterialCommunityIcons
+                name={alertState.type === 'success' ? 'check-circle' : 'alert-circle'}
+                size={44}
+                color={alertState.type === 'success' ? '#4CAF50' : '#FF6B6B'}
+              />
+            </View>
+            <Text style={styles.alertTitle}>{alertState.title}</Text>
+            <Text style={styles.alertMessage}>{alertState.message}</Text>
+            <TouchableOpacity
+              style={[styles.alertBtn, { backgroundColor: alertState.type === 'success' ? '#4CAF50' : '#FF6B6B' }]}
+              onPress={closeAlert}
+            >
+              <Text style={styles.alertBtnText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -298,6 +341,57 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     marginTop: 20,
+  },
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    width: '85%',
+    maxWidth: 320,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  alertIconCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  alertTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 6,
+  },
+  alertMessage: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 18,
+    lineHeight: 20,
+  },
+  alertBtn: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+  },
+  alertBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
 

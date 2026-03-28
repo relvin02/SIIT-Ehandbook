@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { announcementsService } from '../services/apiClient';
@@ -23,6 +24,7 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -87,7 +89,11 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({
             </View>
 
             {pinnedAnnouncements.map(announcement => (
-              <AnnouncementCard key={announcement.id} announcement={announcement} />
+              <AnnouncementCard
+                key={announcement.id}
+                announcement={announcement}
+                onPress={() => setSelectedAnnouncement(announcement)}
+              />
             ))}
           </View>
         )}
@@ -103,6 +109,7 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({
               <AnnouncementCard
                 key={announcement.id}
                 announcement={announcement}
+                onPress={() => setSelectedAnnouncement(announcement)}
               />
             ))}
           </View>
@@ -123,6 +130,34 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={!!selectedAnnouncement}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedAnnouncement(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.sweetAlertCard}>
+            <View style={styles.sweetAlertIconContainer}>
+              <MaterialCommunityIcons name="bullhorn" size={46} color="#4CAF50" />
+            </View>
+            <Text style={styles.sweetAlertTitle}>Announcement</Text>
+            <Text style={styles.modalTitle}>{selectedAnnouncement?.title}</Text>
+            <Text style={styles.modalDate}>{selectedAnnouncement ? new Date(selectedAnnouncement.createdAt).toLocaleDateString() : ''}</Text>
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator>
+              <Text style={styles.modalText}>{selectedAnnouncement?.content}</Text>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setSelectedAnnouncement(null)}
+            >
+              <Text style={styles.modalCloseText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -130,14 +165,17 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({
 /**
  * Announcement Card Component
  */
-const AnnouncementCard: React.FC<{ announcement: Announcement }> = ({
+const AnnouncementCard: React.FC<{ announcement: Announcement; onPress?: () => void }> = ({
   announcement,
+  onPress,
 }) => {
   const isNew = announcement.isNew ?? false;
   const createdDate = new Date(announcement.createdAt).toLocaleDateString();
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onPress}
       style={[
         styles.announcementCard,
         announcement.isPinned && styles.pinnedCard,
@@ -168,7 +206,11 @@ const AnnouncementCard: React.FC<{ announcement: Announcement }> = ({
       </Text>
 
       {announcement.content.length > 100 && (
-        <TouchableOpacity style={styles.readMoreButton}>
+        <TouchableOpacity
+          style={styles.readMoreButton}
+          onPress={onPress}
+          activeOpacity={0.8}
+        >
           <Text style={styles.readMoreText}>Read More</Text>
           <MaterialCommunityIcons
             name="chevron-right"
@@ -177,7 +219,7 @@ const AnnouncementCard: React.FC<{ announcement: Announcement }> = ({
           />
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -279,6 +321,80 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#004BA8',
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#22313F',
+  },
+  modalDate: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 10,
+  },
+  modalBody: {
+    marginBottom: 14,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 20,
+    textAlign: 'justify',
+  },
+  modalCloseBtn: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  modalCloseText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  sweetAlertCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 22,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+  },
+  sweetAlertIconContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  sweetAlertTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 6,
   },
   emptyState: {
     flex: 1,

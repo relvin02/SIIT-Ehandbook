@@ -32,6 +32,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -138,6 +139,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               <AnnouncementCard
                 key={announcement.id}
                 announcement={announcement}
+                onPress={() => setSelectedAnnouncement(announcement)}
               />
             ))
           )}
@@ -147,7 +149,11 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         {videos.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🎬 Through the Years</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.videoScrollContainer}
+            >
               {videos.map((video: any) => (
                 <TouchableOpacity
                   key={video._id || video.id}
@@ -222,6 +228,26 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
         </View>
       </Modal>
+
+      <Modal
+        visible={!!selectedAnnouncement}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedAnnouncement(null)}
+      >
+        <View style={styles.announcementModalOverlay}>
+          <View style={styles.announcementModalContent}>
+            <Text style={styles.announcementModalTitle}>{selectedAnnouncement?.title}</Text>
+            <Text style={styles.announcementModalDate}>{selectedAnnouncement ? new Date(selectedAnnouncement.createdAt).toLocaleDateString() : ''}</Text>
+            <ScrollView style={styles.announcementModalBody}>
+              <Text style={styles.announcementModalText}>{selectedAnnouncement?.content}</Text>
+            </ScrollView>
+            <TouchableOpacity style={styles.announcementModalCloseBtn} onPress={() => setSelectedAnnouncement(null)}>
+              <Text style={styles.announcementModalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -229,14 +255,19 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 /**
  * Announcement Card Component
  */
-const AnnouncementCard: React.FC<{ announcement: Announcement }> = ({
+const AnnouncementCard: React.FC<{ announcement: Announcement; onPress?: () => void }> = ({
   announcement,
+  onPress,
 }) => {
   const isNew = announcement.isNew ?? false;
   const createdDate = new Date(announcement.createdAt).toLocaleDateString();
 
   return (
-    <View style={styles.announcementCard}>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onPress}
+      style={styles.announcementCard}
+    >
       <View style={styles.announcementHeader}>
         <View style={styles.announcementTitleContainer}>
           <Text style={styles.announcementTitle}>{announcement.title}</Text>
@@ -250,7 +281,7 @@ const AnnouncementCard: React.FC<{ announcement: Announcement }> = ({
       <Text style={styles.announcementContent} numberOfLines={3}>
         {announcement.content}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -392,6 +423,50 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 10,
   },
+  announcementModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  announcementModalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 15,
+  },
+  announcementModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#22313F',
+    marginBottom: 6,
+  },
+  announcementModalDate: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 10,
+  },
+  announcementModalBody: {
+    marginBottom: 12,
+  },
+  announcementModalText: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 20,
+    textAlign: 'justify',
+  },
+  announcementModalCloseBtn: {
+    backgroundColor: '#004BA8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  announcementModalCloseText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
   infoCardsContainer: {
     paddingHorizontal: 15,
     paddingBottom: 20,
@@ -416,16 +491,23 @@ const styles = StyleSheet.create({
     textAlign: 'justify',
   },
   videoCard: {
-    width: 200,
+    width: SCREEN_WIDTH * 0.8,
+    maxWidth: 360,
     marginRight: 12,
     borderRadius: 10,
     backgroundColor: '#fff',
+    alignSelf: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
+  },
+  videoScrollContainer: {
+    paddingLeft: 15,
+    paddingRight: 15,
+    alignItems: 'center',
   },
   videoThumbnail: {
     width: '100%',

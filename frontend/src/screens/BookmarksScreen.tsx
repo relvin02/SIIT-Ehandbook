@@ -40,6 +40,7 @@ const BookmarksScreen: React.FC<BookmarksScreenProps> = ({ navigation }) => {
   const [alertState, setAlertState] = useState<AlertState>({
     visible: false, type: 'success', title: '', message: '',
   });
+  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
   const showAlert = (type: AlertType, title: string, message: string, onConfirm?: () => void) => {
     setAlertState({ visible: true, type, title, message, onConfirm });
   };
@@ -116,11 +117,7 @@ const BookmarksScreen: React.FC<BookmarksScreenProps> = ({ navigation }) => {
               <BookmarkCard
                 key={bookmark.id}
                 bookmark={bookmark}
-                onPress={() =>
-                  navigation.navigate('SectionDetail', {
-                    sectionId: bookmark.sectionId,
-                  })
-                }
+                onPress={() => setSelectedBookmark(bookmark)}
                 onRemove={() => handleRemoveBookmark(bookmark)}
               />
             ))}

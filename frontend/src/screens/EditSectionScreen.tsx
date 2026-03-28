@@ -233,43 +233,50 @@ const EditSectionScreen: React.FC<EditSectionScreenProps> = ({ navigation }) => 
           <View style={styles.modalOverlay}>
             <View style={styles.editModalContent}>
               <Text style={styles.editModalTitle}>Edit Section</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Section Title"
-                value={editForm.title}
-                onChangeText={text => setEditForm({ ...editForm, title: text })}
-              />
-              <View style={styles.categoryDropdown}>
-                <Text style={styles.label}>Category</Text>
-                <View style={styles.categoryList}>
-                  {categories.map(cat => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.categoryOption,
-                        editForm.categoryId === cat.id && styles.categoryOptionActive,
-                      ]}
-                      onPress={() => setEditForm({ ...editForm, categoryId: cat.id })}
-                    >
-                      <Text
+              <ScrollView
+                style={styles.editModalScroll}
+                contentContainerStyle={{ paddingBottom: 16 }}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+              >
+                <TextInput
+                  style={styles.input}
+                  placeholder="Section Title"
+                  value={editForm.title}
+                  onChangeText={text => setEditForm({ ...editForm, title: text })}
+                />
+                <View style={styles.categoryDropdown}>
+                  <Text style={styles.label}>Category</Text>
+                  <View style={styles.categoryList}>
+                    {categories.map(cat => (
+                      <TouchableOpacity
+                        key={cat.id}
                         style={[
-                          styles.categoryOptionText,
-                          editForm.categoryId === cat.id && styles.categoryOptionTextActive,
+                          styles.categoryOption,
+                          editForm.categoryId === cat.id && styles.categoryOptionActive,
                         ]}
+                        onPress={() => setEditForm({ ...editForm, categoryId: cat.id })}
                       >
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            styles.categoryOptionText,
+                            editForm.categoryId === cat.id && styles.categoryOptionTextActive,
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
-              </View>
-              <TextInput
-                style={[styles.input, styles.editContentInput]}
-                placeholder="Section Content"
-                multiline
-                value={editForm.content}
-                onChangeText={text => setEditForm({ ...editForm, content: text })}
-              />
+                <TextInput
+                  style={[styles.input, styles.editContentInput]}
+                  placeholder="Section Content"
+                  multiline
+                  value={editForm.content}
+                  onChangeText={text => setEditForm({ ...editForm, content: text })}
+                />
+              </ScrollView>
               <View style={styles.editModalButtons}>
                 <TouchableOpacity
                   style={styles.editCancelBtn}
@@ -542,6 +549,9 @@ const styles = StyleSheet.create({
   editContentInput: {
     minHeight: 200,
     textAlignVertical: 'top',
+  },
+  editModalScroll: {
+    maxHeight: '72%',
   },
   editModalButtons: {
     flexDirection: 'row',
