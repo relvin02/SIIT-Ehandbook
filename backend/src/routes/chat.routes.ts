@@ -163,7 +163,7 @@ Keep answers concise and practical.`;
     });
   } catch (error) {
     console.error('Chat error:', error);
-    res.status(500).json({ error: 'Failed to process message' });
+    return res.status(500).json({ error: 'Failed to process message' });
   }
 });
 
