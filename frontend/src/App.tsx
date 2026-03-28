@@ -21,6 +21,7 @@ import AnnouncementsScreen from './screens/AnnouncementsScreen';
 import ManageUsersScreen from './screens/ManageUsersScreen';
 import SIITHymnScreen from './screens/SIITHymnScreen';
 import ManageMediaScreen from './screens/ManageMediaScreen';
+import ChatScreen from './screens/ChatScreen';
 
 // Store
 import store from './store';
@@ -53,6 +54,8 @@ const StudentTabs = () => {
             iconName = focused ? 'bookmark' : 'bookmark-outline';
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'account' : 'account-outline';
+          } else if (route.name === 'ChatTab') {
+            iconName = focused ? 'chat' : 'chat-outline';
           }
 
           return (
@@ -95,6 +98,11 @@ const StudentTabs = () => {
         name="ProfileTab"
         component={ProfileScreen}
         options={{ title: 'Profile' }}
+      />
+      <Tab.Screen
+        name="ChatTab"
+        component={ChatScreen}
+        options={{ title: 'Assistant' }}
       />
     </Tab.Navigator>
   );

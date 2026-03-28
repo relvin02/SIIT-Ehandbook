@@ -1,12 +1,29 @@
 {
   "expo": {
+    "name": "SIIT E-Handbook",
+    "slug": "siit-ehandbook",
+    "version": "1.0.0",
+    "icon": "./frontend/assets/icon.png",
+    "splash": {
+      "image": "./frontend/assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "extra": {
       "eas": {
         "projectId": "4166f18e-2704-4acf-8485-7a67efc263ea"
       }
     },
     "android": {
-      "package": "com.rgcoder.siitehandbook"
+      "package": "com.rgcoder.siitehandbook",
+      "icon": "./frontend/assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./frontend/assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "ios": {
+      "icon": "./frontend/assets/icon.png"
     }
   }
 }
