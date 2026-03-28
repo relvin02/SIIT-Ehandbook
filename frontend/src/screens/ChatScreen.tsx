@@ -10,11 +10,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import axios from 'axios';
-import { BACKEND_API_URL } from '../config/api';
 
 interface Message {
   id: string;
@@ -22,6 +19,105 @@ interface Message {
   sender: 'user' | 'bot';
   timestamp: number;
 }
+
+interface FAQ {
+  id: number;
+  keywords: { exact: string[]; priority: string[]; general: string[] };
+  response: string;
+}
+
+const FAQ_DATA: FAQ[] = [
+  {
+    id: 1,
+    keywords: {
+      exact: ['what programs', 'what courses', 'what do you offer', 'what programs do you have'],
+      priority: ['program', 'programs', 'course', 'courses', 'major', 'degree', 'bachelors', 'bachelor', 'engineering', 'computer science', 'information technology'],
+      general: ['study', 'offered', 'bs', 'it'],
+    },
+    response: 'SIIT offers several programs including Bachelor of Science in Information Technology, Computer Science, and Engineering. For more details, visit the Handbook or contact the Admissions Office at admissions@siit.edu.',
+  },
+  {
+    id: 2,
+    keywords: {
+      exact: ['scholarship', 'financial aid', 'grants', 'how to get scholarship'],
+      priority: ['scholarship', 'scholarships', 'grant', 'grants', 'financial', 'funding', 'fund'],
+      general: ['assistance', 'sponsorship', 'money', 'afford'],
+    },
+    response: 'SIIT has scholarship programs available for qualified students. Contact the Financial Aid Office at finaid@siit.edu or visit the Scholarship section in your Handbook for eligibility requirements and how to apply.',
+  },
+  {
+    id: 3,
+    keywords: {
+      exact: ['how to apply', 'how do i apply', 'admission requirements', 'how to enroll'],
+      priority: ['admission', 'admissions', 'apply', 'application', 'entrance', 'requirements', 'enroll'],
+      general: ['admit', 'intake', 'accept'],
+    },
+    response: 'To apply to SIIT, you\'ll need to submit: academic transcripts, entrance exam results, and a completed application form. Visit admissions@siit.edu or the Handbook for detailed step-by-step instructions and deadlines.',
+  },
+  {
+    id: 4,
+    keywords: {
+      exact: ['academic transcript', 'official records', 'how to get transcript'],
+      priority: ['transcript', 'transcripts', 'records', 'academic', 'gpa', 'grades'],
+      general: ['document', 'certificate', 'copy'],
+    },
+    response: 'To request your academic transcript, visit the Registrar\'s Office or submit a request online at registrar@siit.edu. Standard processing takes 3-5 business days.',
+  },
+  {
+    id: 5,
+    keywords: {
+      exact: ['student conduct', 'disciplinary policy', 'code of conduct', 'school rules'],
+      priority: ['conduct', 'discipline', 'disciplinary', 'rules', 'code', 'violation', 'policy'],
+      general: ['behavior', 'misconduct', 'penalties', 'punishment'],
+    },
+    response: 'Student conduct expectations are outlined in the Student Handbook. Contact the Office of Student Affairs at studentaffairs@siit.edu for questions about disciplinary policies, violations, and conduct codes.',
+  },
+  {
+    id: 6,
+    keywords: {
+      exact: ['student clubs', 'how to join', 'student organizations', 'what clubs are there'],
+      priority: ['clubs', 'club', 'activities', 'activity', 'organization', 'organizations', 'student life'],
+      general: ['join', 'societies', 'extracurricular', 'sports', 'events'],
+    },
+    response: 'SIIT has various student clubs and organizations covering academics, sports, arts, and more. Check the Student Life section in the Handbook or visit the Student Affairs office to join clubs that match your interests.',
+  },
+  {
+    id: 7,
+    keywords: {
+      exact: ['library resources', 'how to use library', 'library services'],
+      priority: ['library', 'books', 'resources', 'research', 'borrowing'],
+      general: ['study materials', 'references', 'reading materials', 'materials'],
+    },
+    response: 'The SIIT Library offers access to books, journals, and digital resources. Visit the Library section in the Handbook or contact library@siit.edu for research assistance, borrowing procedures, and resource guides.',
+  },
+  {
+    id: 8,
+    keywords: {
+      exact: ['counseling services', 'mental health support', 'student counseling', 'need help'],
+      priority: ['counseling', 'counselor', 'mental health', 'wellness', 'support', 'help'],
+      general: ['stress', 'anxiety', 'personal', 'psychological', 'issues'],
+    },
+    response: 'SIIT provides counseling and wellness services to all students. Contact the Student Counseling Center at counseling@siit.edu or visit the office for confidential support with academic, personal, and mental health concerns.',
+  },
+  {
+    id: 9,
+    keywords: {
+      exact: ['tuition payment', 'payment deadline', 'billing', 'when to pay', 'payment schedule'],
+      priority: ['payment', 'tuition', 'billing', 'fee', 'deadline', 'bill'],
+      general: ['installment', 'cost', 'fees', 'schedule'],
+    },
+    response: 'Tuition payment information and schedules are in the Billing section of the Handbook. For payment plans, deadline extensions, or billing questions, contact the Finance Office at finance@siit.edu.',
+  },
+  {
+    id: 10,
+    keywords: {
+      exact: ['siit hymn', 'school hymn', 'school anthem', 'listen to hymn'],
+      priority: ['hymn', 'anthem', 'music', 'song', 'lyrics'],
+      general: ['listen', 'school', 'siit'],
+    },
+    response: 'The SIIT Hymn is available in the app! Go to the Home tab and look for the "SIIT Hymn" section to view the lyrics and listen to the music. It\'s a beautiful part of our school identity!',
+  },
+];
 
 const ChatScreen = () => {
   const { user } = useSelector((state: any) => state.auth);
@@ -47,6 +143,90 @@ const ChatScreen = () => {
     scrollToBottom();
   }, [messages]);
 
+  const findAnswer = (question: string): string => {
+    const lowerQuestion = question.toLowerCase().trim();
+    
+    let bestMatch: FAQ | null = null;
+    let bestScore = 0;
+    
+    for (const faq of FAQ_DATA) {
+      let score = 0;
+      
+      // Check EXACT phrase matches first (highest priority)
+      for (const exactPhrase of faq.keywords.exact) {
+        if (lowerQuestion.includes(exactPhrase.toLowerCase())) {
+          score += 10; // Highest weight
+        }
+      }
+      
+      // Check PRIORITY keywords (medium priority)
+      for (const priorityKeyword of faq.keywords.priority) {
+        if (lowerQuestion.includes(priorityKeyword.toLowerCase())) {
+          score += 5; // Medium weight
+        }
+      }
+      
+      // Check GENERAL keywords (lowest priority)
+      for (const generalKeyword of faq.keywords.general) {
+        if (lowerQuestion.includes(generalKeyword.toLowerCase())) {
+          score += 1; // Low weight
+        }
+      }
+      
+      // Keep track of the FAQ with the highest score
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = faq;
+      }
+    }
+    
+    // If we found a good match, return the answer
+    if (bestMatch && bestScore > 0) {
+      return bestMatch.response;
+    }
+    
+    // Fallback responses for common questions
+    if (
+      lowerQuestion.includes('hello') ||
+      lowerQuestion.includes('hi') ||
+      lowerQuestion.includes('how are you') ||
+      lowerQuestion.includes('hey')
+    ) {
+      return 'Hello! 👋 I\'m here to help. Ask me about programs, scholarships, admissions, conduct, activities, library, counseling, payments, or student life at SIIT!';
+    }
+    
+    if (
+      lowerQuestion.includes('thank') ||
+      lowerQuestion.includes('thanks') ||
+      lowerQuestion.includes('appreciate')
+    ) {
+      return 'You\'re welcome! 😊 Feel free to ask me more questions about SIIT!';
+    }
+
+    // Check for name-related questions (what's my name, who am I, etc.)
+    if (
+      lowerQuestion.includes('what is my name') ||
+      lowerQuestion.includes('what\'s my name') ||
+      lowerQuestion.includes('my name') ||
+      lowerQuestion.includes('who am i') ||
+      lowerQuestion.includes('who am I')
+    ) {
+      const userName = user?.name || 'Student';
+      return `Your name is ${userName}! 😊 It's nice to be assisting you. How can I help with your SIIT-related questions?`;
+    }
+    
+    if (
+      lowerQuestion.includes('who are you') ||
+      lowerQuestion.includes('what are you') ||
+      lowerQuestion.includes('your name')
+    ) {
+      return 'I\'m the SIIT Assistant! I\'m here to answer your questions about the SIIT E-Handbook, programs, policies, and student services. What would you like to know?';
+    }
+    
+    // Generic fallback
+    return 'I\'m not entirely sure about that. Try asking about: programs, scholarships, admissions, conduct, student activities, library, counseling, or payments. Or check the Handbook directly!';
+  };
+
   const handleSendMessage = async () => {
     if (inputText.trim() === '') return;
 
@@ -59,68 +239,30 @@ const ChatScreen = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const messageToSend = inputText;
     setInputText('');
     setIsTyping(true);
-    scrollToBottom();
 
-    try {
-      // Call the backend API
-      const response = await axios.post(
-        `${BACKEND_API_URL}/api/chat/message`,
-        { message: messageToSend },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      // Extract bot response from API
-      const botResponseText = response.data?.reply || response.data?.message || 'I couldn\'t generate a response. Please try again.';
-
+    // Simulate bot typing delay
+    setTimeout(() => {
+      const botResponse = findAnswer(inputText);
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: botResponseText,
+        text: botResponse,
         sender: 'bot',
         timestamp: Date.now(),
       };
-
       setMessages((prev) => [...prev, botMessage]);
-    } catch (error: any) {
-      // Handle error gracefully
-      let errorMessage = 'Sorry, I encountered an error. Please try again.';
-
-      if (error.response?.status === 401) {
-        errorMessage = 'Your session has expired. Please log in again.';
-      } else if (error.response?.status === 400) {
-        errorMessage = 'Invalid request. Please try rephrasing your question.';
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Server error. Please try again later.';
-      } else if (error.message === 'Network Error') {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      }
-
-      const errorBotMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: errorMessage,
-        sender: 'bot',
-        timestamp: Date.now(),
-      };
-
-      setMessages((prev) => [...prev, errorBotMessage]);
-      console.error('Chat API Error:', error);
-    } finally {
       setIsTyping(false);
-      scrollToBottom();
-    }
+    }, 500);
+
+    scrollToBottom();
   };
 
   const handleClearChat = () => {
     setMessages([
       {
         id: '0',
-        text: 'Hi there! 👋 I\'m your SIIT Assistant. Ask me about programs, scholarships, admissions, student life, or anything in the handbook!',
+        text: 'Hello! I\'m the SIIT Assistant 🎓 Ask me anything about SIIT E-Handbook, programs, scholarships, admissions, or student life!',
         sender: 'bot',
         timestamp: Date.now(),
       },
