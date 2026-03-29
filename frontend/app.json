@@ -21,6 +21,12 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location"
         }
+      ],
+      [
+        "react-native-maps",
+        {
+          "mapsVersion": "google-maps:v18.2.0"
+        }
       ]
     ],
     "ios": {
@@ -41,6 +47,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/siitappicon.png",
         "backgroundColor": "#1B5E20"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyA-TJgnLm_xs32_Jst5ZNanqBXIC5ha2Tw"
+        }
       }
     },
     "web": {

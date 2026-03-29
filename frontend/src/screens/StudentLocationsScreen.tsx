@@ -53,17 +53,33 @@ const StudentLocationsScreen: React.FC = () => {
       setLoading(true);
       setError(null);
       const token = await AsyncStorage.getItem('authToken');
+      
+      if (!token) {
+        setError('Authentication token not found. Please log in again.');
+        setStudents([]);
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.get(`${API_URL}/location/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.data && response.data.success) {
+      
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
         const validStudents = response.data.data.filter(
           (student: StudentLocation) =>
-            student.location && student.location.latitude && student.location.longitude
+            student &&
+            student.location &&
+            typeof student.location.latitude === 'number' &&
+            typeof student.location.longitude === 'number' &&
+            isFinite(student.location.latitude) &&
+            isFinite(student.location.longitude)
         );
+        
         setStudents(validStudents);
+        
         // Update map region if students exist
         if (validStudents.length > 0) {
           const avgLat =
@@ -72,18 +88,26 @@ const StudentLocationsScreen: React.FC = () => {
           const avgLng =
             validStudents.reduce((sum: number, s: StudentLocation) => sum + s.location.longitude, 0) /
             validStudents.length;
-          setMapRegion((prev) => ({
-            ...prev,
-            latitude: avgLat,
-            longitude: avgLng,
-          }));
+          
+          // Validate region values
+          if (isFinite(avgLat) && isFinite(avgLng)) {
+            setMapRegion((prev) => ({
+              ...prev,
+              latitude: avgLat,
+              longitude: avgLng,
+            }));
+          }
         }
       } else {
-        setError('Failed to fetch student locations.');
+        setError('No student location data available.');
         setStudents([]);
       }
-    } catch (err) {
-      setError('Error fetching student locations. Please check your connection or try again.');
+    } catch (err: any) {
+      console.error('Fetch error:', err);
+      const errorMsg = err.response?.status === 403 
+        ? 'You do not have permission to view student locations.'
+        : err.message || 'Error fetching student locations. Please check your connection or try again.';
+      setError(errorMsg);
       setStudents([]);
     } finally {
       setLoading(false);
@@ -167,20 +191,40 @@ const StudentLocationsScreen: React.FC = () => {
 
       {/* Map View */}
       {viewMode === 'map' && students.length > 0 && (
-        <MapView style={styles.map} region={mapRegion}>
-          {students.map((student) => (
-            <Marker
-              key={student.id}
-              coordinate={{
-                latitude: student.location.latitude,
-                longitude: student.location.longitude,
-              }}
-              title={student.name}
-              description={student.studentId}
-              pinColor={student.isOnline ? '#4CAF50' : '#FF9800'}
-              onPress={() => setSelectedStudent(student)}
-            />
-          ))}
+        <MapView 
+          style={styles.map} 
+          region={mapRegion}
+          onRegionChange={(region) => {
+            // Validate region before setting
+            if (isFinite(region.latitude) && isFinite(region.longitude)) {
+              setMapRegion(region);
+            }
+          }}
+        >
+          {students.map((student) => {
+            // Validate coordinates before rendering marker
+            if (
+              !student.location ||
+              !isFinite(student.location.latitude) ||
+              !isFinite(student.location.longitude)
+            ) {
+              return null;
+            }
+            
+            return (
+              <Marker
+                key={student.id}
+                coordinate={{
+                  latitude: student.location.latitude,
+                  longitude: student.location.longitude,
+                }}
+                title={student.name || 'Unknown'}
+                description={student.studentId || 'N/A'}
+                pinColor={student.isOnline ? '#4CAF50' : '#FF9800'}
+                onPress={() => setSelectedStudent(student)}
+              />
+            );
+          })}
         </MapView>
       )}
 
