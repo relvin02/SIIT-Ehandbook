@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profileService } from '../services/apiClient';
 import { authActions } from '../store';
 import { RootState } from '../store';
+import locationService from '../services/locationService';
 
 type ProfileScreenProps = {
   navigation: any;
@@ -31,10 +32,64 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<string | null>(null);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
+  const [sendingLocation, setSendingLocation] = useState(false);
 
   useEffect(() => {
     fetchProfile();
+    if (role === 'student') {
+      checkLocationPermission();
+      checkTrackingStatus();
+    }
   }, []);
+
+  const checkLocationPermission = async () => {
+    const hasPermission = await locationService.hasLocationPermission();
+    setLocationPermission(hasPermission ? 'Granted' : 'Denied');
+  };
+
+  const checkTrackingStatus = () => {
+    const isActive = locationService.isTrackingActive();
+    setIsTrackingActive(isActive);
+  };
+
+  const testSendLocation = async () => {
+    try {
+      setSendingLocation(true);
+      const location = await locationService.getCurrentLocation();
+      
+      if (!location) {
+        Alert.alert('Error', 'Cannot get location. Check if permission is granted and GPS is enabled.');
+        return;
+      }
+
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch('https://siit-ehandbook-api.onrender.com/api/location/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        Alert.alert('Success', `Location sent!\nLat: ${location.latitude.toFixed(4)}\nLng: ${location.longitude.toFixed(4)}`);
+        checkTrackingStatus();
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send location');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send location test');
+    } finally {
+      setSendingLocation(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -180,6 +235,60 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             </>
           )}
         </View>
+
+        {/* Location Tracking Info - For Students Only */}
+        {role === 'student' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Location Tracking</Text>
+            
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name={locationPermission === 'Granted' ? 'check-circle' : 'alert-circle'}
+                  size={20}
+                  color={locationPermission === 'Granted' ? '#4CAF50' : '#FF9800'}
+                />
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Permission Status</Text>
+                  <Text style={styles.infoValue}>{locationPermission || 'Checking...'}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name={isTrackingActive ? 'signal-variant' : 'signal-off'}
+                  size={20}
+                  color={isTrackingActive ? '#4CAF50' : '#FF9800'}
+                />
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Tracking Status</Text>
+                  <Text style={styles.infoValue}>{isTrackingActive ? 'Active' : 'Inactive'}</Text>
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.testButton, sendingLocation && styles.buttonDisabled]}
+              onPress={testSendLocation}
+              disabled={sendingLocation}
+            >
+              {sendingLocation ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="map-marker" size={18} color="#fff" />
+                  <Text style={styles.testButtonText}>Test Send Location</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.helperText}>
+              📍 Location updates automatically every 2 minutes when app is running.
+            </Text>
+          </View>
+        )}
 
         {/* Actions */}
         <View style={styles.section}>
@@ -459,6 +568,56 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,
+  },
+  infoCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    elevation: 1,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#004BA8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 10,
+    marginBottom: 12,
+    gap: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
 
