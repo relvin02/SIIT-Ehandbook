@@ -41,6 +41,7 @@ const StudentLocationsScreen: React.FC = () => {
     longitude: 120.9842,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
+    error: null,
   });
 
   useEffect(() => {
@@ -51,6 +52,7 @@ const StudentLocationsScreen: React.FC = () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('authToken');
+      setError(null);
 
       const response = await axios.get(`${API_URL}/location/all`, {
         headers: {
@@ -99,7 +101,8 @@ const StudentLocationsScreen: React.FC = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  if (loading) {
+            setError('Error fetching student locations. Please check your connection or try again.');
+            setStudents([]);
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -115,6 +118,20 @@ const StudentLocationsScreen: React.FC = () => {
       {/* Header with toggle buttons */}
       <View style={styles.header}>
         <TouchableOpacity
+  
+        if (error) {
+          return (
+            <SafeAreaView style={styles.container}>
+              <View style={styles.loadingContainer}>
+                <MaterialCommunityIcons name="alert-circle" size={48} color="#FF5252" />
+                <Text style={styles.loadingText}>{error}</Text>
+                <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh}>
+                  <Text style={styles.retryBtnText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            </SafeAreaView>
+          );
+        }
           style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
           onPress={() => setViewMode('map')}
         >
