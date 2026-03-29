@@ -143,12 +143,14 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
             <TextInput
               style={styles.input}
               placeholder="Title"
+              placeholderTextColor="#888"
               value={formData.title}
               onChangeText={text => setFormData({ ...formData, title: text })}
             />
             <TextInput
               style={[styles.input, styles.contentInput]}
               placeholder="Content"
+              placeholderTextColor="#888"
               multiline
               numberOfLines={4}
               value={formData.content}

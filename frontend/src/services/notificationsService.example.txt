@@ -1,0 +1,5 @@
+// Example usage: Call this after a successful login
+import { registerForPushNotificationsAsync } from './notificationsService';
+
+// After login, get userId and authToken
+// await registerForPushNotificationsAsync(userId, authToken);

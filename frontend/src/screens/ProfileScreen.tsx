@@ -269,23 +269,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.testButton, sendingLocation && styles.buttonDisabled]}
-              onPress={testSendLocation}
-              disabled={sendingLocation}
-            >
-              {sendingLocation ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <MaterialCommunityIcons name="map-marker" size={18} color="#fff" />
-                  <Text style={styles.testButtonText}>Test Send Location</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
             <Text style={styles.helperText}>
-              📍 Location updates automatically every 2 minutes when app is running.
+              📍 Location updates automatically in the background after login.
             </Text>
           </View>
         )}

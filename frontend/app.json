@@ -38,10 +38,15 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
       ],
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/siitappicon.png",
-        "backgroundColor": "#1B5E20"
-      },
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/siitappicon.png",
+          "backgroundColor": "#1B5E20"
+        },
+        "permissions": [
+          "ACCESS_FINE_LOCATION",
+          "ACCESS_COARSE_LOCATION",
+          "ACCESS_BACKGROUND_LOCATION"
+        ],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyA-TJgnLm_xs32_Jst5ZNanqBXIC5ha2Tw"

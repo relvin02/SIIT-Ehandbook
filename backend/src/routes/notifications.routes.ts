@@ -1,5 +1,23 @@
 import express from 'express';
-import { Notification } from '../models';
+import { Notification, User } from '../models';
+/**
+ * Register or update Expo push token for the logged-in user
+ * POST /api/notifications/register
+ * Body: { expoPushToken: string }
+ */
+router.post('/register', authenticate, async (req: AuthRequest, res: express.Response) => {
+  try {
+    const { expoPushToken } = req.body;
+    if (!expoPushToken) {
+      return res.status(400).json({ success: false, message: 'expoPushToken is required' });
+    }
+    // Update user's push token
+    await User.findByIdAndUpdate(req.user?.id, { expoPushToken });
+    return res.json({ success: true, message: 'Push token registered' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
 import { authenticate, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();

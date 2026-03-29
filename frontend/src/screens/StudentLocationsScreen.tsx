@@ -191,15 +191,9 @@ const StudentLocationsScreen: React.FC = () => {
 
       {/* Map View */}
       {viewMode === 'map' && students.length > 0 && (
-        <MapView 
-          style={styles.map} 
-          region={mapRegion}
-          onRegionChange={(region) => {
-            // Validate region before setting
-            if (isFinite(region.latitude) && isFinite(region.longitude)) {
-              setMapRegion(region);
-            }
-          }}
+        <MapView
+          style={styles.map}
+          initialRegion={mapRegion}
         >
           {students.map((student) => {
             // Validate coordinates before rendering marker

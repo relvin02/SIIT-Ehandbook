@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
   },
   avatar: String,
   phoneNumber: String,
+  expoPushToken: {
+    type: String,
+    default: null,
+  },
   location: {
     latitude: {
       type: Number,

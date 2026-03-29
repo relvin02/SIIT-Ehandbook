@@ -1,5 +1,8 @@
 {
   "name": "siit-ehandbook",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "expo-task-manager": "^55.0.10"
+  }
 }

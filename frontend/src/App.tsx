@@ -31,6 +31,7 @@ import { authActions } from './store';
 // Services
 import { authService } from './services/apiClient';
 import locationService from './services/locationService';
+import { startBackgroundLocation, stopBackgroundLocation } from './services/backgroundLocation';
 
 // Navigation
 const Stack = createNativeStackNavigator();
@@ -204,6 +205,11 @@ function AppInner() {
           // Start location tracking for students
           if (userData.role === 'student') {
             locationService.startLocationTracking(authToken);
+            // Start background location updates
+            startBackgroundLocation();
+          } else {
+            // Stop background location if not student
+            stopBackgroundLocation();
           }
         } catch {
           dispatch(authActions.setUser({ email: '', id: '', name: '' }));

@@ -1,7 +1,8 @@
 import express from 'express';
-import { Announcement } from '../models';
+import { Announcement, User } from '../models';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { io } from '../index';
+import { sendExpoNotification } from '../utils/sendExpoNotification';
 
 const router = express.Router();
 
@@ -94,6 +95,22 @@ router.post('/', authenticate, authorize(['admin']), async (req: AuthRequest, re
 
     await announcement.save();
     await announcement.populate('createdBy', 'name');
+
+    // Send push notification to all students with expoPushToken
+    try {
+      const students = await User.find({ role: 'student', expoPushToken: { $ne: null } }, 'expoPushToken');
+      const notificationPromises = students.map((student: any) =>
+        sendExpoNotification(
+          student.expoPushToken,
+          'New Announcement',
+          title,
+          { type: 'announcement', announcementId: announcement._id }
+        )
+      );
+      await Promise.all(notificationPromises);
+    } catch (notifErr) {
+      console.error('Error sending push notifications:', notifErr);
+    }
 
     // Broadcast to all connected clients
     io.emit('announcement_created', {

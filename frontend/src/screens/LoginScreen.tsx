@@ -19,6 +19,7 @@ const siitSeal = require('../assets/siitlogo.png');
 const seahawksLogo = require('../assets/seahawks.png');
 import { authService } from '../services/apiClient';
 import { authActions } from '../store';
+import { registerForPushNotificationsAsync } from '../services/notificationsService';
 
 const showAlert = (title: string, msg: string) => {
   if (Platform.OS === 'web') {
@@ -61,6 +62,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             response.data.user.role === 'admin' ? 'admin' : 'student'
           )
         );
+        // Register for push notifications after successful login
+        try {
+          await registerForPushNotificationsAsync(response.data.user.id, response.data.token);
+        } catch (notifErr) {
+          console.warn('Push notification registration failed:', notifErr);
+        }
       } else {
         setErrorMsg(response.message || 'Login failed');
       }
