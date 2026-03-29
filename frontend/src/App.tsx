@@ -22,6 +22,7 @@ import ManageUsersScreen from './screens/ManageUsersScreen';
 import SIITHymnScreen from './screens/SIITHymnScreen';
 import ManageMediaScreen from './screens/ManageMediaScreen';
 import ChatScreen from './screens/ChatScreen';
+import StudentLocationsScreen from './screens/StudentLocationsScreen';
 
 // Store
 import store from './store';
@@ -29,6 +30,7 @@ import { authActions } from './store';
 
 // Services
 import { authService } from './services/apiClient';
+import locationService from './services/locationService';
 
 // Navigation
 const Stack = createNativeStackNavigator();
@@ -124,6 +126,8 @@ const AdminTabs = () => {
             iconName = focused ? 'pencil' : 'pencil-outline';
           } else if (route.name === 'AdminUsers') {
             iconName = focused ? 'account-group' : 'account-group-outline';
+          } else if (route.name === 'AdminLocations') {
+            iconName = focused ? 'map' : 'map-outline';
           } else if (route.name === 'AdminProfile') {
             iconName = focused ? 'account' : 'account-outline';
           }
@@ -160,6 +164,11 @@ const AdminTabs = () => {
         options={{ title: 'Students' }}
       />
       <Tab.Screen
+        name="AdminLocations"
+        component={StudentLocationsScreen}
+        options={{ title: 'Locations' }}
+      />
+      <Tab.Screen
         name="AdminProfile"
         component={ProfileScreen}
         options={{ title: 'Profile' }}
@@ -191,6 +200,11 @@ function AppInner() {
           const userData = await authService.getMe();
           dispatch(authActions.setUser(userData));
           dispatch(authActions.setRole(userData.role === 'admin' ? 'admin' : 'student'));
+
+          // Start location tracking for students
+          if (userData.role === 'student') {
+            locationService.startLocationTracking(authToken);
+          }
         } catch {
           dispatch(authActions.setUser({ email: '', id: '', name: '' }));
           dispatch(authActions.setRole((userRole as 'admin' | 'student') || 'student'));

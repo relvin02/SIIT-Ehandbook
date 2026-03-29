@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SIIT E-Handbook",
+    "name": "SIIT eHandbook",
     "slug": "siit-ehandbook",
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
@@ -15,12 +15,29 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location"
+        }
+      ]
+    ],
     "ios": {
-      "supportsTabletMode": true
+      "supportsTabletMode": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to track your position for the institution.",
+        "NSLocationAlwaysUsageDescription": "This app needs access to your location to track your position for the institution.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to track your position for the institution."
+      }
     },
     "android": {
       "package": "com.siit.ehandbook",
       "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/siitappicon.png",
         "backgroundColor": "#1B5E20"
