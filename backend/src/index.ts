@@ -14,6 +14,7 @@ import searchRoutes from './routes/search.routes';
 import profileRoutes from './routes/profile.routes';
 import notificationRoutes from './routes/notifications.routes';
 import mediaRoutes from './routes/media.routes';
+import locationRoutes from './routes/location.routes';
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +47,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/location', locationRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

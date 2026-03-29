@@ -29,6 +29,20 @@ const userSchema = new mongoose.Schema({
   },
   avatar: String,
   phoneNumber: String,
+  location: {
+    latitude: {
+      type: Number,
+      default: null,
+    },
+    longitude: {
+      type: Number,
+      default: null,
+    },
+    lastUpdate: {
+      type: Date,
+      default: null,
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
