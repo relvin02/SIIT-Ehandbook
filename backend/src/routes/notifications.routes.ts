@@ -1,5 +1,7 @@
 import express from 'express';
+import { authenticate, AuthRequest } from '../middleware/auth';
 import { Notification, User } from '../models';
+const router = express.Router();
 /**
  * Register or update Expo push token for the logged-in user
  * POST /api/notifications/register
@@ -18,9 +20,6 @@ router.post('/register', authenticate, async (req: AuthRequest, res: express.Res
     return res.status(500).json({ success: false, message: err.message });
   }
 });
-import { authenticate, AuthRequest } from '../middleware/auth';
-
-const router = express.Router();
 
 /**
  * Get user notifications
