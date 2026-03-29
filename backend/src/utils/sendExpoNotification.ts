@@ -18,6 +18,12 @@ export async function sendExpoNotification(expoPushToken: string, title: string,
       data,
     });
   } catch (err) {
-    console.error('Expo push notification error:', err?.response?.data || err.message || err);
+    if (axios.isAxiosError(err)) {
+      console.error('Expo push notification error:', err.response?.data || err.message);
+    } else if (err instanceof Error) {
+      console.error('Expo push notification error:', err.message);
+    } else {
+      console.error('Expo push notification error:', err);
+    }
   }
 }
