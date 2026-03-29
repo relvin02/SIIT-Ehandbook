@@ -21,12 +21,6 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location"
         }
-      ],
-      [
-        "react-native-maps",
-        {
-          "mapsVersion": "google-maps:v18.2.0"
-        }
       ]
     ],
     "ios": {
