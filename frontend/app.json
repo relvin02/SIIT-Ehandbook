@@ -21,7 +21,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location"
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "ios": {
       "infoPlist": {
