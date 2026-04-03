@@ -11,7 +11,7 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, Callout } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -214,11 +214,34 @@ const StudentLocationsScreen: React.FC = () => {
                   latitude: student.location.latitude,
                   longitude: student.location.longitude,
                 }}
-                title={student.name || 'Unknown'}
-                description={student.studentId || 'N/A'}
-                pinColor={student.isOnline ? '#4CAF50' : '#FF9800'}
                 onPress={() => setSelectedStudent(student)}
-              />
+              >
+                {/* Custom Avatar Marker */}
+                <View style={styles.markerContainer}>
+                  <View style={[
+                    styles.markerBubble,
+                    { borderColor: student.isOnline ? '#4CAF50' : '#FF9800' },
+                  ]}>
+                    {student.avatar ? (
+                      <Image source={{ uri: student.avatar }} style={styles.markerAvatar} />
+                    ) : (
+                      <View style={[styles.markerAvatarPlaceholder, { backgroundColor: student.isOnline ? '#4CAF50' : '#FF9800' }]}>
+                        <MaterialCommunityIcons name="account" size={20} color="#fff" />
+                      </View>
+                    )}
+                  </View>
+                  <View style={[styles.markerArrow, { borderTopColor: student.isOnline ? '#4CAF50' : '#FF9800' }]} />
+                </View>
+                <Callout tooltip>
+                  <View style={styles.calloutContainer}>
+                    <Text style={styles.calloutName}>{student.name || 'Unknown'}</Text>
+                    <Text style={styles.calloutId}>{student.studentId || 'N/A'}</Text>
+                    <Text style={[styles.calloutStatus, { color: student.isOnline ? '#4CAF50' : '#FF9800' }]}>
+                      {student.isOnline ? '● Active' : '○ Inactive'}
+                    </Text>
+                  </View>
+                </Callout>
+              </Marker>
             );
           })}
         </MapView>
@@ -452,6 +475,71 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  markerContainer: {
+    alignItems: 'center',
+  },
+  markerBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 3,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  markerAvatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  markerAvatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  markerArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#4CAF50',
+    marginTop: -1,
+  },
+  calloutContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+    minWidth: 120,
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+  },
+  calloutName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  calloutId: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
+  calloutStatus: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
   },
   listContainer: {
     flex: 1,
