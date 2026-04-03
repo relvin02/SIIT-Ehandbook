@@ -93,14 +93,60 @@ const ChatScreen = () => {
       'when', 'where', 'who', 'which', 'why', 'tell', 'know', 'get', 'give',
       'sa', 'ang', 'ng', 'mga', 'na', 'po', 'ko', 'mo', 'ba', 'ano', 'paano',
       'saan', 'kailan', 'sino', 'yung', 'may', 'naman', 'lang', 'din', 'rin',
+      'alam', 'pano', 'gusto', 'kasi', 'talaga', 'dito', 'doon', 'ito', 'iyon',
+      'namin', 'natin', 'nila', 'kami', 'tayo', 'sila', 'kayo', 'nya', 'niya',
+      'pwede', 'pwedeng', 'meron', 'wala', 'ganun', 'ganon', 'ganito', 'ganyan',
+      'pa', 'pala', 'daw', 'raw', 'nga', 'eh', 'oh', 'ha', 'oo', 'hindi',
+      'magkano', 'need', 'like', 'just', 'also', 'please', 'want', 'really',
     ]);
+
+    // Tagalog → English keyword mappings for common handbook topics
+    const tagalogMap: Record<string, string> = {
+      'bayad': 'tuition fees payment',
+      'magbayad': 'tuition fees payment',
+      'bayarin': 'tuition fees payment',
+      'pera': 'tuition fees payment',
+      'pasok': 'admission enrollment',
+      'pumasok': 'admission enrollment',
+      'papasok': 'admission enrollment',
+      'enroll': 'enrollment admission',
+      'uniporme': 'uniform dress code',
+      'damit': 'uniform dress code',
+      'grado': 'grading system grades',
+      'grades': 'grading system',
+      'bawal': 'prohibited violations conduct',
+      'parusa': 'sanctions penalty violations',
+      'suspension': 'suspension disciplinary',
+      'late': 'tardiness attendance',
+      'absent': 'absence attendance',
+      'liban': 'absence attendance',
+      'ID': 'identification card',
+      'scholarship': 'scholarship financial',
+      'iskolar': 'scholarship financial',
+      'libre': 'scholarship financial',
+      'exam': 'examination',
+      'pasahan': 'requirements submission',
+      'requirements': 'requirements admission',
+    };
     
     const words = question.toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .split(/\s+/)
       .filter(w => w.length > 1 && !stopWords.has(w));
-    
-    return words;
+
+    // Expand Tagalog words to English equivalents
+    const expanded: string[] = [];
+    for (const word of words) {
+      if (tagalogMap[word]) {
+        expanded.push(...tagalogMap[word].split(' '));
+      } else {
+        expanded.push(word);
+      }
+    }
+
+    // Deduplicate and put English words first (more likely to match handbook)
+    const unique = [...new Set(expanded)];
+    return unique;
   };
 
   /**
@@ -158,13 +204,23 @@ const ChatScreen = () => {
       // Try full question first
       let results = await searchService.search(question);
       
-      // If no results, try individual keywords
+      // If no results, try extracted/translated keywords
       if ((!results || results.length === 0)) {
         const keywords = extractSearchTerms(question);
-        for (const keyword of keywords) {
-          if (keyword.length >= 3) {
-            results = await searchService.search(keyword);
-            if (results && results.length > 0) break;
+        
+        // Try combining top keywords (e.g. "tuition fees payment")
+        if (keywords.length >= 2) {
+          const combined = keywords.slice(0, 3).join(' ');
+          results = await searchService.search(combined);
+        }
+
+        // If still no results, try individual keywords
+        if (!results || results.length === 0) {
+          for (const keyword of keywords) {
+            if (keyword.length >= 3) {
+              results = await searchService.search(keyword);
+              if (results && results.length > 0) break;
+            }
           }
         }
       }
