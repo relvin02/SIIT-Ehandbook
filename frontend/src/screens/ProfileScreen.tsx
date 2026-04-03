@@ -11,10 +11,12 @@ import {
   TextInput,
   Platform,
   Modal,
+  Image,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { profileService } from '../services/apiClient';
 import { authActions } from '../store';
 import { RootState } from '../store';
@@ -39,6 +41,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [locationPermission, setLocationPermission] = useState<string | null>(null);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
   const [sendingLocation, setSendingLocation] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -123,6 +126,39 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to your photo library to upload an avatar.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets?.[0]?.base64) return;
+
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType || 'image/jpeg';
+    const base64Uri = `data:${mimeType};base64,${asset.base64}`;
+
+    try {
+      setUploadingAvatar(true);
+      const updated = await profileService.updateProfile({ avatar: base64Uri });
+      setProfile({ ...profile, avatar: updated.avatar || base64Uri });
+      Alert.alert('Success', 'Avatar updated!');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleChangePassword = async () => {
     if (!currentPassword.trim() || !newPassword.trim()) {
       Alert.alert('Error', 'Please fill in both fields');
@@ -174,13 +210,20 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       <ScrollView>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <View style={styles.profileAvatar}>
-            <MaterialCommunityIcons
-              name="account-circle"
-              size={80}
-              color="#004BA8"
-            />
-          </View>
+          <TouchableOpacity style={styles.profileAvatar} onPress={handlePickAvatar} disabled={uploadingAvatar}>
+            {profile?.avatar ? (
+              <Image source={{ uri: profile.avatar }} style={styles.avatarImage} />
+            ) : (
+              <MaterialCommunityIcons name="account-circle" size={100} color="rgba(255,255,255,0.7)" />
+            )}
+            <View style={styles.avatarEditBadge}>
+              {uploadingAvatar ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <MaterialCommunityIcons name="camera" size={16} color="#fff" />
+              )}
+            </View>
+          </TouchableOpacity>
           <Text style={styles.profileName}>{profile?.name || 'User'}</Text>
           <View style={styles.roleTag}>
             <Text style={styles.roleTagText}>
@@ -446,6 +489,29 @@ const styles = StyleSheet.create({
   },
   profileAvatar: {
     marginBottom: 15,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: -4,
+    backgroundColor: '#004BA8',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   profileName: {
     fontSize: 22,
