@@ -546,9 +546,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   videoScrollContainer: {
-    paddingLeft: 15,
-    paddingRight: 15,
-    alignItems: 'center',
+    paddingHorizontal: 15,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   videoThumbnail: {
     width: '100%',

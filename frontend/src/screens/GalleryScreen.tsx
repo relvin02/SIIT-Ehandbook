@@ -531,13 +531,14 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
     paddingTop: 8,
   },
   gridItem: {
-    width: (SCREEN_WIDTH - 30) / 2,
-    height: ((SCREEN_WIDTH - 30) / 2) * 1.3,
-    margin: 5,
+    width: (SCREEN_WIDTH - 32) / 2,
+    height: ((SCREEN_WIDTH - 32) / 2) * 1.3,
+    marginBottom: 8,
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#e8e8e8',
