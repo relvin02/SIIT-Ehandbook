@@ -20,6 +20,8 @@ const seahawksLogo = require('../assets/seahawks.png');
 import { authService } from '../services/apiClient';
 import { authActions } from '../store';
 import { registerForPushNotificationsAsync } from '../services/notificationsService';
+import locationService from '../services/locationService';
+import { startBackgroundLocation } from '../services/backgroundLocation';
 
 const showAlert = (title: string, msg: string) => {
   if (Platform.OS === 'web') {
@@ -67,6 +69,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           await registerForPushNotificationsAsync(response.data.user.id, response.data.token);
         } catch (notifErr) {
           console.warn('Push notification registration failed:', notifErr);
+        }
+
+        // Start location tracking for students
+        if (response.data.user.role === 'student') {
+          try {
+            locationService.startLocationTracking(response.data.token);
+            startBackgroundLocation();
+          } catch (locErr) {
+            console.warn('Location tracking start failed:', locErr);
+          }
         }
       } else {
         setErrorMsg(response.message || 'Login failed');
