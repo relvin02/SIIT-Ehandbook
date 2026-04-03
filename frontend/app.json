@@ -24,7 +24,6 @@
       ]
     ],
     "ios": {
-      "supportsTabletMode": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to track your position for the institution.",
         "NSLocationAlwaysUsageDescription": "This app needs access to your location to track your position for the institution.",
