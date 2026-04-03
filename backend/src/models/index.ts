@@ -244,3 +244,42 @@ const mediaSchema = new mongoose.Schema({
 });
 
 export const Media = mongoose.model('Media', mediaSchema);
+
+// OrgChart Member Schema
+const orgChartMemberSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  position: {
+    type: String,
+    required: true,
+  },
+  image: {
+    type: String, // base64 or URL
+    default: null,
+  },
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'OrgChartMember',
+    default: null,
+  },
+  order: {
+    type: Number,
+    default: 0,
+  },
+  level: {
+    type: Number,
+    default: 0, // 0 = top (chairman), 1 = board members, 2 = officers, etc.
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const OrgChartMember = mongoose.model('OrgChartMember', orgChartMemberSchema);

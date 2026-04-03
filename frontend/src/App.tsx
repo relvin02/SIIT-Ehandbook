@@ -23,6 +23,7 @@ import SIITHymnScreen from './screens/SIITHymnScreen';
 import ManageMediaScreen from './screens/ManageMediaScreen';
 import ChatScreen from './screens/ChatScreen';
 import StudentLocationsScreen from './screens/StudentLocationsScreen';
+import OrgChartScreen from './screens/OrgChartScreen';
 
 // Store
 import store from './store';
@@ -339,6 +340,17 @@ function AppInner() {
                 headerTitleStyle: { fontWeight: 'bold' },
               }}
             />
+            <Stack.Screen
+              name="OrgChart"
+              component={OrgChartScreen}
+              options={{
+                title: 'Organizational Chart',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
           </Stack.Group>
         ) : role === 'faculty' ? (
           <Stack.Group>
@@ -365,6 +377,17 @@ function AppInner() {
                 title: 'SIIT Hymn',
                 headerShown: true,
                 headerStyle: { backgroundColor: '#1B5E20' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="OrgChart"
+              component={OrgChartScreen}
+              options={{
+                title: 'Organizational Chart',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
                 headerTintColor: '#fff',
                 headerTitleStyle: { fontWeight: 'bold' },
               }}
@@ -399,6 +422,17 @@ function AppInner() {
                 title: 'SIIT Hymn',
                 headerShown: true,
                 headerStyle: { backgroundColor: '#1B5E20' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="OrgChart"
+              component={OrgChartScreen}
+              options={{
+                title: 'Organizational Chart',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
                 headerTintColor: '#fff',
                 headerTitleStyle: { fontWeight: 'bold' },
               }}

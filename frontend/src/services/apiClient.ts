@@ -314,4 +314,29 @@ export const mediaService = {
   },
 };
 
+/**
+ * Org Chart Service
+ */
+export const orgChartService = {
+  async getAll() {
+    const response = await apiClient.get('/orgchart');
+    return response.data.data;
+  },
+
+  async create(data: { name: string; position: string; image?: string; parentId?: string; order?: number; level?: number }) {
+    const response = await apiClient.post('/orgchart', data);
+    return response.data.data;
+  },
+
+  async update(id: string, data: { name?: string; position?: string; image?: string; parentId?: string; order?: number; level?: number }) {
+    const response = await apiClient.put(`/orgchart/${id}`, data);
+    return response.data.data;
+  },
+
+  async remove(id: string) {
+    const response = await apiClient.delete(`/orgchart/${id}`);
+    return response.data;
+  },
+};
+
 export default apiClient;

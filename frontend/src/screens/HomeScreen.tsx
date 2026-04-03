@@ -192,6 +192,21 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Org Chart Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.hymnButton, { backgroundColor: '#004BA8' }]}
+            onPress={() => navigation.navigate('OrgChart')}
+          >
+            <MaterialCommunityIcons name="sitemap" size={28} color="#fff" />
+            <View style={styles.hymnTextContainer}>
+              <Text style={styles.hymnButtonTitle}>Organizational Chart</Text>
+              <Text style={styles.hymnButtonSubtitle}>Board of Trustees & Officers</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
         {/* Info Cards */}
         <View style={styles.infoCardsContainer}>
           <InfoCard
