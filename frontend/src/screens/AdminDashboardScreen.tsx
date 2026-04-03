@@ -126,6 +126,26 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
         </TouchableOpacity>
 
+        {/* Org Chart Button */}
+        <TouchableOpacity
+          style={[styles.mediaButton, { backgroundColor: '#004BA8' }]}
+          onPress={() => navigation.navigate('OrgChart')}
+        >
+          <MaterialCommunityIcons name="sitemap" size={20} color="#fff" />
+          <Text style={styles.mediaButtonText}>Organizational Chart</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+
+        {/* Photo Gallery Button */}
+        <TouchableOpacity
+          style={[styles.mediaButton, { backgroundColor: '#6A1B9A' }]}
+          onPress={() => navigation.navigate('Gallery')}
+        >
+          <MaterialCommunityIcons name="image-multiple" size={20} color="#fff" />
+          <Text style={styles.mediaButtonText}>Photo Gallery</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+
         {/* Create Button */}
         <TouchableOpacity
           style={styles.createButton}
