@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { searchService } from '../services/apiClient';
 
 interface Message {
   id: string;
@@ -20,103 +21,14 @@ interface Message {
   timestamp: number;
 }
 
-interface FAQ {
-  id: number;
-  keywords: { exact: string[]; priority: string[]; general: string[] };
-  response: string;
-}
-
-const FAQ_DATA: FAQ[] = [
-  {
-    id: 1,
-    keywords: {
-      exact: ['what programs', 'what courses', 'what do you offer', 'what programs do you have'],
-      priority: ['program', 'programs', 'course', 'courses', 'major', 'degree', 'bachelors', 'bachelor', 'engineering', 'computer science', 'information technology'],
-      general: ['study', 'offered', 'bs', 'it'],
-    },
-    response: 'SIIT offers several programs including Bachelor of Science in Information Technology, Computer Science, and Engineering. For more details, visit the Handbook or contact the Admissions Office at admissions@siit.edu.',
-  },
-  {
-    id: 2,
-    keywords: {
-      exact: ['scholarship', 'financial aid', 'grants', 'how to get scholarship'],
-      priority: ['scholarship', 'scholarships', 'grant', 'grants', 'financial', 'funding', 'fund'],
-      general: ['assistance', 'sponsorship', 'money', 'afford'],
-    },
-    response: 'SIIT has scholarship programs available for qualified students. Contact the Financial Aid Office at finaid@siit.edu or visit the Scholarship section in your Handbook for eligibility requirements and how to apply.',
-  },
-  {
-    id: 3,
-    keywords: {
-      exact: ['how to apply', 'how do i apply', 'admission requirements', 'how to enroll'],
-      priority: ['admission', 'admissions', 'apply', 'application', 'entrance', 'requirements', 'enroll'],
-      general: ['admit', 'intake', 'accept'],
-    },
-    response: 'To apply to SIIT, you\'ll need to submit: academic transcripts, entrance exam results, and a completed application form. Visit admissions@siit.edu or the Handbook for detailed step-by-step instructions and deadlines.',
-  },
-  {
-    id: 4,
-    keywords: {
-      exact: ['academic transcript', 'official records', 'how to get transcript'],
-      priority: ['transcript', 'transcripts', 'records', 'academic', 'gpa', 'grades'],
-      general: ['document', 'certificate', 'copy'],
-    },
-    response: 'To request your academic transcript, visit the Registrar\'s Office or submit a request online at registrar@siit.edu. Standard processing takes 3-5 business days.',
-  },
-  {
-    id: 5,
-    keywords: {
-      exact: ['student conduct', 'disciplinary policy', 'code of conduct', 'school rules'],
-      priority: ['conduct', 'discipline', 'disciplinary', 'rules', 'code', 'violation', 'policy'],
-      general: ['behavior', 'misconduct', 'penalties', 'punishment'],
-    },
-    response: 'Student conduct expectations are outlined in the Student Handbook. Contact the Office of Student Affairs at studentaffairs@siit.edu for questions about disciplinary policies, violations, and conduct codes.',
-  },
-  {
-    id: 6,
-    keywords: {
-      exact: ['student clubs', 'how to join', 'student organizations', 'what clubs are there'],
-      priority: ['clubs', 'club', 'activities', 'activity', 'organization', 'organizations', 'student life'],
-      general: ['join', 'societies', 'extracurricular', 'sports', 'events'],
-    },
-    response: 'SIIT has various student clubs and organizations covering academics, sports, arts, and more. Check the Student Life section in the Handbook or visit the Student Affairs office to join clubs that match your interests.',
-  },
-  {
-    id: 7,
-    keywords: {
-      exact: ['library resources', 'how to use library', 'library services'],
-      priority: ['library', 'books', 'resources', 'research', 'borrowing'],
-      general: ['study materials', 'references', 'reading materials', 'materials'],
-    },
-    response: 'The SIIT Library offers access to books, journals, and digital resources. Visit the Library section in the Handbook or contact library@siit.edu for research assistance, borrowing procedures, and resource guides.',
-  },
-  {
-    id: 8,
-    keywords: {
-      exact: ['counseling services', 'mental health support', 'student counseling', 'need help'],
-      priority: ['counseling', 'counselor', 'mental health', 'wellness', 'support', 'help'],
-      general: ['stress', 'anxiety', 'personal', 'psychological', 'issues'],
-    },
-    response: 'SIIT provides counseling and wellness services to all students. Contact the Student Counseling Center at counseling@siit.edu or visit the office for confidential support with academic, personal, and mental health concerns.',
-  },
-  {
-    id: 9,
-    keywords: {
-      exact: ['tuition payment', 'payment deadline', 'billing', 'when to pay', 'payment schedule'],
-      priority: ['payment', 'tuition', 'billing', 'fee', 'deadline', 'bill'],
-      general: ['installment', 'cost', 'fees', 'schedule'],
-    },
-    response: 'Tuition payment information and schedules are in the Billing section of the Handbook. For payment plans, deadline extensions, or billing questions, contact the Finance Office at finance@siit.edu.',
-  },
-  {
-    id: 10,
-    keywords: {
-      exact: ['siit hymn', 'school hymn', 'school anthem', 'listen to hymn'],
-      priority: ['hymn', 'anthem', 'music', 'song', 'lyrics'],
-      general: ['listen', 'school', 'siit'],
-    },
-    response: 'The SIIT Hymn is available in the app! Go to the Home tab and look for the "SIIT Hymn" section to view the lyrics and listen to the music. It\'s a beautiful part of our school identity!',
-  },
+// Quick-reply suggestions
+const QUICK_REPLIES = [
+  'Admission requirements',
+  'Tuition fees',
+  'Scholarship',
+  'Student conduct',
+  'Grading system',
+  'Uniform policy',
 ];
 
 const ChatScreen = () => {
@@ -124,7 +36,7 @@ const ChatScreen = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
-      text: 'Hi there! 👋 I\'m your SIIT Assistant. Ask me about programs, scholarships, admissions, student life, or anything in the handbook!',
+      text: 'Hi there! 👋 I\'m your SIIT Handbook Assistant. Ask me anything about school policies, rules, admissions, or student life — I\'ll search the official handbook for you!',
       sender: 'bot',
       timestamp: Date.now(),
     },
@@ -143,97 +55,136 @@ const ChatScreen = () => {
     scrollToBottom();
   }, [messages]);
 
-  const findAnswer = (question: string): string => {
-    const lowerQuestion = question.toLowerCase().trim();
-    
-    let bestMatch: FAQ | null = null;
-    let bestScore = 0;
-    
-    for (const faq of FAQ_DATA) {
-      let score = 0;
-      
-      // Check EXACT phrase matches first (highest priority)
-      for (const exactPhrase of faq.keywords.exact) {
-        if (lowerQuestion.includes(exactPhrase.toLowerCase())) {
-          score += 10; // Highest weight
-        }
-      }
-      
-      // Check PRIORITY keywords (medium priority)
-      for (const priorityKeyword of faq.keywords.priority) {
-        if (lowerQuestion.includes(priorityKeyword.toLowerCase())) {
-          score += 5; // Medium weight
-        }
-      }
-      
-      // Check GENERAL keywords (lowest priority)
-      for (const generalKeyword of faq.keywords.general) {
-        if (lowerQuestion.includes(generalKeyword.toLowerCase())) {
-          score += 1; // Low weight
-        }
-      }
-      
-      // Keep track of the FAQ with the highest score
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = faq;
-      }
+  /**
+   * Check for simple conversational messages (greetings, thanks, identity)
+   */
+  const getConversationalReply = (question: string): string | null => {
+    const q = question.toLowerCase().trim();
+
+    if (/^(hi|hello|hey|good\s*(morning|afternoon|evening)|kumusta|musta)/i.test(q)) {
+      return 'Hello! 👋 I\'m here to help you with anything in the SIIT Student Handbook. What would you like to know?';
     }
-    
-    // If we found a good match, return the answer
-    if (bestMatch && bestScore > 0) {
-      return bestMatch.response;
+    if (/^(thanks?|thank\s*you|salamat|appreciate)/i.test(q)) {
+      return 'You\'re welcome! 😊 Feel free to ask me anything else about the handbook!';
     }
-    
-    // Fallback responses for common questions
-    if (
-      lowerQuestion.includes('hello') ||
-      lowerQuestion.includes('hi') ||
-      lowerQuestion.includes('how are you') ||
-      lowerQuestion.includes('hey')
-    ) {
-      return 'Hello! 👋 I\'m here to help. Ask me about programs, scholarships, admissions, conduct, activities, library, counseling, payments, or student life at SIIT!';
+    if (/what.*(my|is my)\s*name|who\s*am\s*i/i.test(q)) {
+      const userName = user?.name || 'Student';
+      return `Your name is ${userName}! 😊 How can I help you today?`;
     }
+    if (/who\s*are\s*you|what\s*are\s*you|your\s*name/i.test(q)) {
+      return 'I\'m the SIIT Handbook Assistant! I search the official Student Manual to give you accurate answers about policies, rules, and school information. Try asking me something! 📖';
+    }
+    if (/^(bye|goodbye|see\s*you)/i.test(q)) {
+      return 'Goodbye! 👋 Come back anytime you need help with the handbook!';
+    }
+    return null;
+  };
+
+  /**
+   * Extract keywords from user question for searching
+   */
+  const extractSearchTerms = (question: string): string[] => {
+    const stopWords = new Set([
+      'what', 'is', 'the', 'a', 'an', 'are', 'how', 'do', 'does', 'can', 'i',
+      'to', 'in', 'of', 'for', 'and', 'or', 'my', 'me', 'we', 'you', 'your',
+      'this', 'that', 'it', 'be', 'will', 'would', 'should', 'could', 'about',
+      'have', 'has', 'had', 'was', 'were', 'been', 'being', 'with', 'from',
+      'at', 'on', 'if', 'there', 'their', 'they', 'them', 'any', 'all',
+      'when', 'where', 'who', 'which', 'why', 'tell', 'know', 'get', 'give',
+      'sa', 'ang', 'ng', 'mga', 'na', 'po', 'ko', 'mo', 'ba', 'ano', 'paano',
+      'saan', 'kailan', 'sino', 'yung', 'may', 'naman', 'lang', 'din', 'rin',
+    ]);
     
-    if (
-      lowerQuestion.includes('thank') ||
-      lowerQuestion.includes('thanks') ||
-      lowerQuestion.includes('appreciate')
-    ) {
-      return 'You\'re welcome! 😊 Feel free to ask me more questions about SIIT!';
+    const words = question.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 1 && !stopWords.has(w));
+    
+    return words;
+  };
+
+  /**
+   * Format handbook search results into a readable bot response
+   */
+  const formatSearchResults = (results: any[], originalQuestion: string): string => {
+    if (!results || results.length === 0) {
+      return `I couldn't find specific information about "${originalQuestion}" in the handbook. Try rephrasing your question, or you can browse the Handbook tab directly for more details! 📖`;
     }
 
-    // Check for name-related questions (what's my name, who am I, etc.)
-    if (
-      lowerQuestion.includes('what is my name') ||
-      lowerQuestion.includes('what\'s my name') ||
-      lowerQuestion.includes('my name') ||
-      lowerQuestion.includes('who am i') ||
-      lowerQuestion.includes('who am I')
-    ) {
-      const userName = user?.name || 'Student';
-      return `Your name is ${userName}! 😊 It's nice to be assisting you. How can I help with your SIIT-related questions?`;
+    // Take top 2 most relevant results
+    const topResults = results.slice(0, 2);
+    let response = '';
+
+    for (let i = 0; i < topResults.length; i++) {
+      const result = topResults[i];
+      const title = result.title || 'Untitled';
+      // Get a meaningful excerpt (up to 500 chars)
+      let content = (result.content || '').trim();
+      
+      // Strip HTML tags if present
+      content = content.replace(/<[^>]*>/g, '');
+      
+      if (content.length > 500) {
+        // Try to cut at sentence boundary
+        const cutContent = content.substring(0, 500);
+        const lastPeriod = cutContent.lastIndexOf('.');
+        content = lastPeriod > 200 ? cutContent.substring(0, lastPeriod + 1) : cutContent + '...';
+      }
+
+      if (topResults.length > 1) {
+        response += `📌 **${title}**\n${content}\n\n`;
+      } else {
+        response += `📌 **${title}**\n\n${content}`;
+      }
     }
-    
-    if (
-      lowerQuestion.includes('who are you') ||
-      lowerQuestion.includes('what are you') ||
-      lowerQuestion.includes('your name')
-    ) {
-      return 'I\'m the SIIT Assistant! I\'m here to answer your questions about the SIIT E-Handbook, programs, policies, and student services. What would you like to know?';
+
+    if (results.length > 2) {
+      response += `\n\n💡 Found ${results.length} results. Check the Search tab for more details!`;
     }
-    
-    // Generic fallback
-    return 'I\'m not entirely sure about that. Try asking about: programs, scholarships, admissions, conduct, student activities, library, counseling, or payments. Or check the Handbook directly!';
+
+    return response.trim();
+  };
+
+  /**
+   * Main answer logic: conversational check → handbook search
+   */
+  const findAnswer = async (question: string): Promise<string> => {
+    // 1. Check for conversational replies first
+    const conversationalReply = getConversationalReply(question);
+    if (conversationalReply) return conversationalReply;
+
+    // 2. Search the actual handbook
+    try {
+      // Try full question first
+      let results = await searchService.search(question);
+      
+      // If no results, try individual keywords
+      if ((!results || results.length === 0)) {
+        const keywords = extractSearchTerms(question);
+        for (const keyword of keywords) {
+          if (keyword.length >= 3) {
+            results = await searchService.search(keyword);
+            if (results && results.length > 0) break;
+          }
+        }
+      }
+
+      return formatSearchResults(results, question);
+    } catch (error) {
+      console.error('Handbook search error:', error);
+      return 'Sorry, I\'m having trouble searching the handbook right now. Please try again in a moment or browse the Handbook tab directly! 📖';
+    }
   };
 
   const handleSendMessage = async () => {
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === '' || isTyping) return;
+
+    const userText = inputText.trim();
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputText,
+      text: userText,
       sender: 'user',
       timestamp: Date.now(),
     };
@@ -241,28 +192,30 @@ const ChatScreen = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsTyping(true);
-
-    // Simulate bot typing delay
-    setTimeout(() => {
-      const botResponse = findAnswer(inputText);
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botResponse,
-        sender: 'bot',
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 500);
-
     scrollToBottom();
+
+    // Get answer (may involve API call)
+    const botResponse = await findAnswer(userText);
+    const botMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: botResponse,
+      sender: 'bot',
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, botMessage]);
+    setIsTyping(false);
+    scrollToBottom();
+  };
+
+  const handleQuickReply = (text: string) => {
+    setInputText(text);
   };
 
   const handleClearChat = () => {
     setMessages([
       {
         id: '0',
-        text: 'Hello! I\'m the SIIT Assistant 🎓 Ask me anything about SIIT E-Handbook, programs, scholarships, admissions, or student life!',
+        text: 'Hello! I\'m the SIIT Handbook Assistant 🎓 Ask me anything about the Student Manual — policies, rules, admissions, or student life!',
         sender: 'bot',
         timestamp: Date.now(),
       },
@@ -320,7 +273,25 @@ const ChatScreen = () => {
           <View style={[styles.messageWrapper, styles.botMessageWrapper]}>
             <View style={[styles.messageBubble, styles.botMessage]}>
               <ActivityIndicator size="small" color="#004BA8" />
-              <Text style={[styles.messageText, styles.botMessageText]}>Typing...</Text>
+              <Text style={[styles.messageText, styles.botMessageText]}>Searching handbook...</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Quick Reply Chips - show only when no conversation yet */}
+        {messages.length <= 1 && !isTyping && (
+          <View style={styles.quickRepliesContainer}>
+            <Text style={styles.quickRepliesLabel}>Try asking about:</Text>
+            <View style={styles.quickRepliesRow}>
+              {QUICK_REPLIES.map((text, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.quickReplyChip}
+                  onPress={() => handleQuickReply(text)}
+                >
+                  <Text style={styles.quickReplyText}>{text}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         )}
@@ -486,6 +457,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
     shadowOpacity: 0,
     elevation: 0,
+  },
+  quickRepliesContainer: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  quickRepliesLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  quickRepliesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickReplyChip: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#BBDEFB',
+  },
+  quickReplyText: {
+    color: '#004BA8',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 
