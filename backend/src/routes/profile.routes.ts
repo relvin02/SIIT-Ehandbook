@@ -1,4 +1,5 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import { User } from '../models';
 import { authenticate, AuthRequest } from '../middleware/auth';
 
@@ -84,6 +85,46 @@ router.put('/', authenticate, async (req: AuthRequest, res: express.Response): P
       success: false,
       message: error.message,
     });
+  }
+});
+
+/**
+ * Change own password
+ * PUT /api/profile/change-password
+ */
+router.put('/change-password', authenticate, async (req: AuthRequest, res: express.Response): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, message: 'Current password and new password are required' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+      return;
+    }
+
+    const user = await User.findById(req.user?.id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isValid) {
+      res.status(400).json({ success: false, message: 'Current password is incorrect' });
+      return;
+    }
+
+    user.password_hash = await bcrypt.hash(newPassword, 10);
+    user.updatedAt = new Date();
+    await user.save();
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

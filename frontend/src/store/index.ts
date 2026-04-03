@@ -118,7 +118,7 @@ interface AuthState {
   isAuthenticated: boolean;
   user: any;
   token: string;
-  role: 'student' | 'admin';
+  role: 'student' | 'admin' | 'faculty';
   loading: boolean;
   error: string;
 }
@@ -129,7 +129,7 @@ const authSlice = createSlice({
     isAuthenticated: false,
     user: null as any,
     token: '',
-    role: 'student' as 'student' | 'admin',
+    role: 'student' as 'student' | 'admin' | 'faculty',
     loading: false,
     error: '',
   } as AuthState,
@@ -141,7 +141,7 @@ const authSlice = createSlice({
     setToken: (state: AuthState, action: PayloadAction<string>) => {
       state.token = action.payload;
     },
-    setRole: (state: AuthState, action: PayloadAction<'student' | 'admin'>) => {
+    setRole: (state: AuthState, action: PayloadAction<'student' | 'admin' | 'faculty'>) => {
       state.role = action.payload;
     },
     logout: (state: AuthState) => {

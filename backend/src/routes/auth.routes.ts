@@ -120,11 +120,17 @@ router.post('/logout', authenticate, (_req: AuthRequest, res: express.Response) 
 // ============================================
 
 /**
- * Get all students (Admin only)
+ * Get all users (Admin only) - filter by role query param
  */
-router.get('/users', authenticate, authorize(['admin']), async (_req: AuthRequest, res: express.Response) => {
+router.get('/users', authenticate, authorize(['admin']), async (req: AuthRequest, res: express.Response) => {
   try {
-    const users = await User.find({ role: 'student' })
+    const roleFilter = req.query.role as string;
+    const filter: any = {};
+    if (roleFilter) {
+      filter.role = roleFilter;
+    }
+
+    const users = await User.find(filter)
       .select('-password_hash')
       .sort({ createdAt: -1 });
     res.json({
@@ -134,6 +140,7 @@ router.get('/users', authenticate, authorize(['admin']), async (_req: AuthReques
         name: u.name,
         email: u.email,
         studentId: u.studentId,
+        role: u.role,
         createdAt: u.createdAt,
       })),
     });
@@ -143,14 +150,30 @@ router.get('/users', authenticate, authorize(['admin']), async (_req: AuthReques
 });
 
 /**
- * Create student account (Admin only)
+ * Create user account (Admin only) - supports student, faculty, admin
  */
 router.post('/users', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
   try {
-    const { name, studentId, password } = req.body;
+    const { name, studentId, email, password, role } = req.body;
+    const userRole = role || 'student';
 
-    if (!name || !studentId || !password) {
-      res.status(400).json({ success: false, message: 'Full Name, Student ID, and Password are required' });
+    if (!['student', 'faculty', 'admin'].includes(userRole)) {
+      res.status(400).json({ success: false, message: 'Invalid role' });
+      return;
+    }
+
+    if (!name || !password) {
+      res.status(400).json({ success: false, message: 'Name and Password are required' });
+      return;
+    }
+
+    if (userRole === 'student' && !studentId) {
+      res.status(400).json({ success: false, message: 'Student ID is required for students' });
+      return;
+    }
+
+    if ((userRole === 'faculty' || userRole === 'admin') && !email) {
+      res.status(400).json({ success: false, message: 'Email is required for faculty/admin accounts' });
       return;
     }
 
@@ -159,26 +182,36 @@ router.post('/users', authenticate, authorize(['admin']), async (req: express.Re
       return;
     }
 
-    const existing = await User.findOne({ studentId });
-    if (existing) {
-      res.status(409).json({ success: false, message: 'Student ID already exists' });
+    // Check for existing user
+    if (studentId) {
+      const existingById = await User.findOne({ studentId });
+      if (existingById) {
+        res.status(409).json({ success: false, message: 'Student ID already exists' });
+        return;
+      }
+    }
+
+    const userEmail = email || `${studentId.toLowerCase()}@siit.edu`;
+    const existingByEmail = await User.findOne({ email: userEmail });
+    if (existingByEmail) {
+      res.status(409).json({ success: false, message: 'Email already exists' });
       return;
     }
 
     const password_hash = await bcrypt.hash(password, 10);
     const user = new User({
-      email: `${studentId.toLowerCase()}@siit.edu`,
+      email: userEmail,
       password_hash,
       name,
-      studentId,
-      role: 'student',
+      studentId: studentId || undefined,
+      role: userRole,
     });
     await user.save();
 
     res.status(201).json({
       success: true,
-      message: 'Student account created',
-      data: { id: user._id, name: user.name, studentId: user.studentId, createdAt: user.createdAt },
+      message: `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} account created`,
+      data: { id: user._id, name: user.name, email: user.email, studentId: user.studentId, role: user.role, createdAt: user.createdAt },
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -186,7 +219,7 @@ router.post('/users', authenticate, authorize(['admin']), async (req: express.Re
 });
 
 /**
- * Update student account (Admin only)
+ * Update user account (Admin only)
  */
 router.put('/users/:id', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
   try {
@@ -203,21 +236,21 @@ router.put('/users/:id', authenticate, authorize(['admin']), async (req: express
     }
     updateData.updatedAt = new Date();
 
-    const user = await User.findOneAndUpdate(
-      { _id: req.params.id, role: 'student' },
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
       updateData,
       { new: true }
     ).select('-password_hash');
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'Student not found' });
+      res.status(404).json({ success: false, message: 'User not found' });
       return;
     }
 
     res.json({
       success: true,
-      message: 'Student account updated',
-      data: { id: user._id, name: user.name, studentId: user.studentId },
+      message: 'Account updated',
+      data: { id: user._id, name: user.name, studentId: user.studentId, role: user.role },
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -225,23 +258,23 @@ router.put('/users/:id', authenticate, authorize(['admin']), async (req: express
 });
 
 /**
- * Delete student account (Admin only)
+ * Delete user account (Admin only)
  */
 router.delete('/users/:id', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
   try {
-    const user = await User.findOneAndDelete({ _id: req.params.id, role: 'student' });
+    const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'Student not found' });
+      res.status(404).json({ success: false, message: 'User not found' });
       return;
     }
-    res.json({ success: true, message: 'Student account deleted' });
+    res.json({ success: true, message: 'Account deleted' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 /**
- * Reset student password (Admin only)
+ * Reset user password (Admin only)
  */
 router.post('/users/:id/reset-password', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
   try {
@@ -252,13 +285,13 @@ router.post('/users/:id/reset-password', authenticate, authorize(['admin']), asy
     }
 
     const password_hash = await bcrypt.hash(password, 10);
-    const user = await User.findOneAndUpdate(
-      { _id: req.params.id, role: 'student' },
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
       { password_hash, updatedAt: new Date() }
     );
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'Student not found' });
+      res.status(404).json({ success: false, message: 'User not found' });
       return;
     }
 

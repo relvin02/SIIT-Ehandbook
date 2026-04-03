@@ -23,25 +23,50 @@ type AlertState = {
   onConfirm?: () => void;
 };
 
-type Student = {
+type UserRole = 'student' | 'faculty' | 'admin';
+type FilterTab = 'all' | UserRole;
+
+type UserAccount = {
   id: string;
   name: string;
-  studentId: string;
+  studentId?: string;
   email?: string;
+  role: UserRole;
   createdAt: string;
 };
 
+const ROLE_COLORS: Record<UserRole, string> = {
+  student: '#004BA8',
+  faculty: '#7B1FA2',
+  admin: '#E65100',
+};
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  student: 'Student',
+  faculty: 'Faculty',
+  admin: 'Admin',
+};
+
+const ROLE_ICONS: Record<UserRole, string> = {
+  student: 'account',
+  faculty: 'school',
+  admin: 'shield-account',
+};
+
 const ManageUsersScreen: React.FC = () => {
-  const [students, setStudents] = useState<Student[]>([]);
+  const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [resetStudent, setResetStudent] = useState<Student | null>(null);
+  const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
+  const [resetUser, setResetUser] = useState<UserAccount | null>(null);
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
   // Add form
   const [addName, setAddName] = useState('');
   const [addStudentId, setAddStudentId] = useState('');
+  const [addEmail, setAddEmail] = useState('');
   const [addPassword, setAddPassword] = useState('');
+  const [addRole, setAddRole] = useState<UserRole>('student');
 
   // Edit form
   const [editName, setEditName] = useState('');
@@ -66,25 +91,45 @@ const ManageUsersScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchStudents();
+    fetchUsers();
   }, []);
 
-  const fetchStudents = async () => {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await userManagementService.getStudents();
-      setStudents(data);
+      const data = await userManagementService.getUsers();
+      setUsers(data);
     } catch (error: any) {
-      console.error('Failed to fetch students:', error);
-      showAlert('error', 'Error', 'Failed to load students');
+      console.error('Failed to fetch users:', error);
+      showAlert('error', 'Error', 'Failed to load users');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddStudent = async () => {
-    if (!addName.trim() || !addStudentId.trim() || !addPassword.trim()) {
-      showAlert('error', 'Error', 'Please fill in all fields');
+  const filteredUsers = activeTab === 'all'
+    ? users
+    : users.filter(u => u.role === activeTab);
+
+  const resetAddForm = () => {
+    setAddName('');
+    setAddStudentId('');
+    setAddEmail('');
+    setAddPassword('');
+    setAddRole('student');
+  };
+
+  const handleAddUser = async () => {
+    if (!addName.trim() || !addPassword.trim()) {
+      showAlert('error', 'Error', 'Name and password are required');
+      return;
+    }
+    if (addRole === 'student' && !addStudentId.trim()) {
+      showAlert('error', 'Error', 'Student ID is required');
+      return;
+    }
+    if ((addRole === 'faculty' || addRole === 'admin') && !addEmail.trim()) {
+      showAlert('error', 'Error', 'Email is required for faculty/admin');
       return;
     }
     if (addPassword.length < 6) {
@@ -93,68 +138,80 @@ const ManageUsersScreen: React.FC = () => {
     }
 
     try {
-      const result = await userManagementService.createStudent({
+      const payload: any = {
         name: addName.trim(),
-        studentId: addStudentId.trim(),
         password: addPassword,
-      });
-      setStudents([result.data, ...students]);
-      setAddName('');
-      setAddStudentId('');
-      setAddPassword('');
+        role: addRole,
+      };
+      if (addRole === 'student') {
+        payload.studentId = addStudentId.trim();
+      } else {
+        payload.email = addEmail.trim();
+      }
+
+      const result = await userManagementService.createUser(payload);
+      setUsers([result.data, ...users]);
+      resetAddForm();
       setShowAddForm(false);
-      showAlert('success', 'Success', 'Student account created');
+      showAlert('success', 'Success', `${ROLE_LABELS[addRole]} account created`);
     } catch (error: any) {
-      showAlert('error', 'Error', error.response?.data?.message || 'Failed to create student');
+      showAlert('error', 'Error', error.response?.data?.message || 'Failed to create account');
     }
   };
 
-  const handleEditStudent = async () => {
-    if (!editingStudent) return;
+  const handleEditUser = async () => {
+    if (!editingUser) return;
     if (!editName.trim()) {
       showAlert('error', 'Error', 'Name cannot be empty');
       return;
     }
 
     try {
-      await userManagementService.updateStudent(editingStudent.id, { name: editName.trim() });
-      setStudents(students.map(s =>
-        s.id === editingStudent.id ? { ...s, name: editName.trim() } : s
+      await userManagementService.updateStudent(editingUser.id, { name: editName.trim() });
+      setUsers(users.map(u =>
+        u.id === editingUser.id ? { ...u, name: editName.trim() } : u
       ));
-      setEditingStudent(null);
-      showAlert('success', 'Success', 'Student account updated');
+      setEditingUser(null);
+      showAlert('success', 'Success', 'Account updated');
     } catch (error: any) {
-      showAlert('error', 'Error', error.response?.data?.message || 'Failed to update student');
+      showAlert('error', 'Error', error.response?.data?.message || 'Failed to update account');
     }
   };
 
-  const handleDeleteStudent = (student: Student) => {
-    showAlert('confirm', 'Delete Student', `Delete account for ${student.name} (${student.studentId})?`, async () => {
+  const handleDeleteUser = (user: UserAccount) => {
+    const identifier = user.studentId || user.email || '';
+    showAlert('confirm', 'Delete Account', `Delete account for ${user.name} (${identifier})?`, async () => {
       try {
-        await userManagementService.deleteStudent(student.id);
-        setStudents(students.filter(s => s.id !== student.id));
-        showAlert('success', 'Success', 'Student account deleted');
+        await userManagementService.deleteStudent(user.id);
+        setUsers(users.filter(u => u.id !== user.id));
+        showAlert('success', 'Success', 'Account deleted');
       } catch (error: any) {
-        showAlert('error', 'Error', error.response?.data?.message || 'Failed to delete student');
+        showAlert('error', 'Error', error.response?.data?.message || 'Failed to delete account');
       }
     });
   };
 
   const handleResetPassword = async () => {
-    if (!resetStudent) return;
+    if (!resetUser) return;
     if (!resetPassword.trim() || resetPassword.length < 6) {
       showAlert('error', 'Error', 'Password must be at least 6 characters');
       return;
     }
 
     try {
-      await userManagementService.resetPassword(resetStudent.id, resetPassword);
-      setResetStudent(null);
+      await userManagementService.resetPassword(resetUser.id, resetPassword);
+      setResetUser(null);
       setResetPasswordVal('');
       showAlert('success', 'Success', 'Password reset successfully');
     } catch (error: any) {
       showAlert('error', 'Error', error.response?.data?.message || 'Failed to reset password');
     }
+  };
+
+  const getCounts = () => {
+    const counts: Record<string, number> = { all: users.length };
+    users.forEach(u => { counts[u.role] = (counts[u.role] || 0) + 1; });
+    return counts;
   };
 
   if (loading) {
@@ -165,41 +222,93 @@ const ManageUsersScreen: React.FC = () => {
     );
   }
 
+  const counts = getCounts();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        {/* Header Stats */}
+        {/* Header */}
         <View style={styles.headerBar}>
           <MaterialCommunityIcons name="account-group" size={24} color="#004BA8" />
-          <Text style={styles.headerTitle}>Student Accounts ({students.length})</Text>
+          <Text style={styles.headerTitle}>Manage Users ({users.length})</Text>
         </View>
+
+        {/* Filter Tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsRow}>
+          {(['all', 'student', 'faculty', 'admin'] as FilterTab[]).map(tab => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, activeTab === tab && styles.tabActive]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                {tab === 'all' ? 'All' : ROLE_LABELS[tab as UserRole]} ({counts[tab] || 0})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* Add Button */}
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setShowAddForm(!showAddForm)}
+          onPress={() => { setShowAddForm(!showAddForm); if (showAddForm) resetAddForm(); }}
         >
           <MaterialCommunityIcons name={showAddForm ? 'close' : 'plus'} size={20} color="#fff" />
-          <Text style={styles.addButtonText}>{showAddForm ? 'Cancel' : 'Add Student Account'}</Text>
+          <Text style={styles.addButtonText}>{showAddForm ? 'Cancel' : 'Add Account'}</Text>
         </TouchableOpacity>
 
         {/* Add Form */}
         {showAddForm && (
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Create Student Account</Text>
+            <Text style={styles.formTitle}>Create Account</Text>
+
+            {/* Role Selector */}
+            <Text style={styles.fieldLabel}>Role</Text>
+            <View style={styles.roleSelector}>
+              {(['student', 'faculty', 'admin'] as UserRole[]).map(r => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.roleOption, addRole === r && { backgroundColor: ROLE_COLORS[r] }]}
+                  onPress={() => setAddRole(r)}
+                >
+                  <MaterialCommunityIcons
+                    name={ROLE_ICONS[r] as any}
+                    size={16}
+                    color={addRole === r ? '#fff' : '#666'}
+                  />
+                  <Text style={[styles.roleOptionText, addRole === r && { color: '#fff' }]}>
+                    {ROLE_LABELS[r]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <TextInput
               style={styles.input}
               placeholder="Full Name"
               value={addName}
               onChangeText={setAddName}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Student ID (e.g. STU001)"
-              value={addStudentId}
-              onChangeText={setAddStudentId}
-              autoCapitalize="characters"
-            />
+
+            {addRole === 'student' ? (
+              <TextInput
+                style={styles.input}
+                placeholder="Student ID (e.g. STU001)"
+                value={addStudentId}
+                onChangeText={setAddStudentId}
+                autoCapitalize="characters"
+              />
+            ) : (
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={addEmail}
+                onChangeText={setAddEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
+
             <TextInput
               style={styles.input}
               placeholder="Password (min 6 characters)"
@@ -207,32 +316,41 @@ const ManageUsersScreen: React.FC = () => {
               onChangeText={setAddPassword}
               secureTextEntry
             />
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddStudent}>
+            <TouchableOpacity style={[styles.submitButton, { backgroundColor: ROLE_COLORS[addRole] }]} onPress={handleAddUser}>
               <MaterialCommunityIcons name="account-plus" size={18} color="#fff" />
-              <Text style={styles.submitButtonText}>Create Account</Text>
+              <Text style={styles.submitButtonText}>Create {ROLE_LABELS[addRole]} Account</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Students List */}
-        {students.length === 0 ? (
+        {/* Users List */}
+        {filteredUsers.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="account-off" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No student accounts yet</Text>
-            <Text style={styles.emptySubtext}>Tap "Add Student Account" to create one</Text>
+            <Text style={styles.emptyText}>No {activeTab === 'all' ? '' : ROLE_LABELS[activeTab as UserRole].toLowerCase() + ' '}accounts yet</Text>
+            <Text style={styles.emptySubtext}>Tap "Add Account" to create one</Text>
           </View>
         ) : (
-          students.map(student => (
-            <View key={student.id} style={styles.studentCard}>
+          filteredUsers.map(user => (
+            <View key={user.id} style={[styles.studentCard, { borderLeftColor: ROLE_COLORS[user.role] }]}>
               <View style={styles.studentInfo}>
-                <View style={styles.studentAvatar}>
-                  <MaterialCommunityIcons name="account" size={28} color="#fff" />
+                <View style={[styles.studentAvatar, { backgroundColor: ROLE_COLORS[user.role] }]}>
+                  <MaterialCommunityIcons name={ROLE_ICONS[user.role] as any} size={24} color="#fff" />
                 </View>
                 <View style={styles.studentDetails}>
-                  <Text style={styles.studentName}>{student.name}</Text>
-                  <Text style={styles.studentIdText}>ID: {student.studentId}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.studentName}>{user.name}</Text>
+                    <View style={[styles.roleBadge, { backgroundColor: ROLE_COLORS[user.role] + '20' }]}>
+                      <Text style={[styles.roleBadgeText, { color: ROLE_COLORS[user.role] }]}>
+                        {ROLE_LABELS[user.role]}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.studentIdText}>
+                    {user.role === 'student' ? `ID: ${user.studentId}` : user.email}
+                  </Text>
                   <Text style={styles.studentDate}>
-                    Created: {new Date(student.createdAt).toLocaleDateString()}
+                    Created: {new Date(user.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
               </View>
@@ -240,8 +358,8 @@ const ManageUsersScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.editBtn]}
                   onPress={() => {
-                    setEditingStudent(student);
-                    setEditName(student.name);
+                    setEditingUser(user);
+                    setEditName(user.name);
                   }}
                 >
                   <MaterialCommunityIcons name="pencil" size={16} color="#004BA8" />
@@ -250,7 +368,7 @@ const ManageUsersScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.resetBtn]}
                   onPress={() => {
-                    setResetStudent(student);
+                    setResetUser(user);
                     setResetPasswordVal('');
                   }}
                 >
@@ -259,7 +377,7 @@ const ManageUsersScreen: React.FC = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.deleteBtn]}
-                  onPress={() => handleDeleteStudent(student)}
+                  onPress={() => handleDeleteUser(user)}
                 >
                   <MaterialCommunityIcons name="trash-can" size={16} color="#FF6B6B" />
                   <Text style={styles.deleteBtnText}>Delete</Text>
@@ -271,12 +389,14 @@ const ManageUsersScreen: React.FC = () => {
       </ScrollView>
 
       {/* Edit Modal */}
-      {editingStudent && (
+      {editingUser && (
         <Modal transparent animationType="fade" visible={true}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Edit Student</Text>
-              <Text style={styles.modalSubtitle}>ID: {editingStudent.studentId}</Text>
+              <Text style={styles.modalTitle}>Edit {ROLE_LABELS[editingUser.role]}</Text>
+              <Text style={styles.modalSubtitle}>
+                {editingUser.role === 'student' ? `ID: ${editingUser.studentId}` : editingUser.email}
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Full Name"
@@ -286,11 +406,11 @@ const ManageUsersScreen: React.FC = () => {
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.modalCancelBtn}
-                  onPress={() => setEditingStudent(null)}
+                  onPress={() => setEditingUser(null)}
                 >
                   <Text style={styles.modalCancelText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.modalSaveBtn} onPress={handleEditStudent}>
+                <TouchableOpacity style={styles.modalSaveBtn} onPress={handleEditUser}>
                   <Text style={styles.modalSaveText}>Save</Text>
                 </TouchableOpacity>
               </View>
@@ -300,13 +420,13 @@ const ManageUsersScreen: React.FC = () => {
       )}
 
       {/* Reset Password Modal */}
-      {resetStudent && (
+      {resetUser && (
         <Modal transparent animationType="fade" visible={true}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Reset Password</Text>
               <Text style={styles.modalSubtitle}>
-                {resetStudent.name} ({resetStudent.studentId})
+                {resetUser.name} ({resetUser.role === 'student' ? resetUser.studentId : resetUser.email})
               </Text>
               <TextInput
                 style={styles.input}
@@ -318,7 +438,7 @@ const ManageUsersScreen: React.FC = () => {
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.modalCancelBtn}
-                  onPress={() => setResetStudent(null)}
+                  onPress={() => setResetUser(null)}
                 >
                   <Text style={styles.modalCancelText}>Cancel</Text>
                 </TouchableOpacity>
@@ -408,6 +528,29 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  tabsRow: {
+    paddingHorizontal: 15,
+    marginBottom: 12,
+    flexGrow: 0,
+  },
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#e0e0e0',
+    marginRight: 8,
+  },
+  tabActive: {
+    backgroundColor: '#004BA8',
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
+  tabTextActive: {
+    color: '#fff',
+  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -428,6 +571,27 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   formTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 12 },
+  fieldLabel: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 8 },
+  roleSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  roleOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    gap: 6,
+  },
+  roleOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
   input: {
     backgroundColor: '#f9f9f9',
     borderWidth: 1,
@@ -474,6 +638,15 @@ const styles = StyleSheet.create({
   },
   studentDetails: { flex: 1 },
   studentName: { fontSize: 15, fontWeight: 'bold', color: '#333' },
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  roleBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
   studentIdText: { fontSize: 13, color: '#666', marginTop: 2 },
   studentDate: { fontSize: 11, color: '#999', marginTop: 2 },
   actionButtons: { flexDirection: 'row', gap: 8 },

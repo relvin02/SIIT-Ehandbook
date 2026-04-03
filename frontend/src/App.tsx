@@ -112,6 +112,73 @@ const StudentTabs = () => {
 };
 
 /**
+ * Faculty/Staff Navigation Tabs (same as student but no location tracking)
+ */
+const FacultyTabs = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }: { route: any }) => ({
+        tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
+          let iconName: any = 'home';
+
+          if (route.name === 'HomeTab') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'HandbookTab') {
+            iconName = focused ? 'book-open' : 'book-open-outline';
+          } else if (route.name === 'SearchTab') {
+            iconName = focused ? 'magnify' : 'magnify';
+          } else if (route.name === 'BookmarksTab') {
+            iconName = focused ? 'bookmark' : 'bookmark-outline';
+          } else if (route.name === 'ProfileTab') {
+            iconName = focused ? 'account' : 'account-outline';
+          }
+
+          return (
+            <MaterialCommunityIcons name={iconName} size={size} color={color} />
+          );
+        },
+        tabBarActiveTintColor: '#004BA8',
+        tabBarInactiveTintColor: '#888',
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#004BA8',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      })}
+    >
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeScreen}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen
+        name="HandbookTab"
+        component={HandbookScreen}
+        options={{ title: 'Handbook' }}
+      />
+      <Tab.Screen
+        name="SearchTab"
+        component={SearchScreen}
+        options={{ title: 'Search' }}
+      />
+      <Tab.Screen
+        name="BookmarksTab"
+        component={BookmarksScreen}
+        options={{ title: 'Bookmarks' }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
+    </Tab.Navigator>
+  );
+};
+
+/**
  * Admin Navigation Tabs
  */
 const AdminTabs = () => {
@@ -200,20 +267,19 @@ function AppInner() {
         try {
           const userData = await authService.getMe();
           dispatch(authActions.setUser(userData));
-          dispatch(authActions.setRole(userData.role === 'admin' ? 'admin' : 'student'));
+          const userRole = userData.role === 'admin' ? 'admin' : userData.role === 'faculty' ? 'faculty' : 'student';
+          dispatch(authActions.setRole(userRole));
 
-          // Start location tracking for students
+          // Start location tracking for students only
           if (userData.role === 'student') {
             locationService.startLocationTracking(authToken);
-            // Start background location updates
             startBackgroundLocation();
           } else {
-            // Stop background location if not student
             stopBackgroundLocation();
           }
         } catch {
           dispatch(authActions.setUser({ email: '', id: '', name: '' }));
-          dispatch(authActions.setRole((userRole as 'admin' | 'student') || 'student'));
+          dispatch(authActions.setRole((userRole as 'admin' | 'student' | 'faculty') || 'student'));
         }
       }
     } catch (error) {
@@ -269,6 +335,36 @@ function AppInner() {
                 title: 'Media Management',
                 headerShown: true,
                 headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+          </Stack.Group>
+        ) : role === 'faculty' ? (
+          <Stack.Group>
+            <Stack.Screen
+              name="FacultyRoot"
+              component={FacultyTabs}
+              options={{}}
+            />
+            <Stack.Screen
+              name="SectionDetail"
+              component={SectionDetailScreen}
+              options={{
+                title: 'Section',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="SIITHymn"
+              component={SIITHymnScreen}
+              options={{
+                title: 'SIIT Hymn',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1B5E20' },
                 headerTintColor: '#fff',
                 headerTitleStyle: { fontWeight: 'bold' },
               }}

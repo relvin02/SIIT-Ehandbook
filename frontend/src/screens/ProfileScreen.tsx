@@ -32,6 +32,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [locationPermission, setLocationPermission] = useState<string | null>(null);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
   const [sendingLocation, setSendingLocation] = useState(false);
@@ -119,6 +123,29 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPassword.trim() || !newPassword.trim()) {
+      Alert.alert('Error', 'Please fill in both fields');
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'New password must be at least 6 characters');
+      return;
+    }
+    try {
+      setPasswordLoading(true);
+      await profileService.changePassword(currentPassword, newPassword);
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      Alert.alert('Success', 'Password changed successfully');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     setShowLogoutModal(true);
   };
@@ -157,7 +184,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <Text style={styles.profileName}>{profile?.name || 'User'}</Text>
           <View style={styles.roleTag}>
             <Text style={styles.roleTagText}>
-              {role === 'admin' ? '🔐 Admin' : '👤 Student'}
+              {role === 'admin' ? '🔐 Admin' : role === 'faculty' ? '🏫 Faculty' : '👤 Student'}
             </Text>
           </View>
         </View>
@@ -190,7 +217,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 }
                 editable={false}
               />
-              {role !== 'admin' && (
+              {role !== 'admin' && role !== 'faculty' && (
                 <TextInput
                   style={styles.input}
                   placeholder="Student ID"
@@ -224,10 +251,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             <>
               <InfoField label="Email" value={profile?.email} />
               <InfoField label="Name" value={profile?.name} />
-              {role !== 'admin' && (
+              {role !== 'admin' && role !== 'faculty' && (
                 <InfoField label="Student ID" value={profile?.studentId} />
               )}
-              <InfoField label="Role" value={role === 'admin' ? 'Administrator' : 'Student'} />
+              <InfoField label="Role" value={role === 'admin' ? 'Administrator' : role === 'faculty' ? 'Faculty' : 'Student'} />
               <InfoField
                 label="Member Since"
                 value={new Date(profile?.createdAt).toLocaleDateString()}
@@ -279,6 +306,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
 
+          <TouchableOpacity
+            style={styles.actionItem}
+            onPress={() => { setShowPasswordModal(true); setCurrentPassword(''); setNewPassword(''); }}
+          >
+            <MaterialCommunityIcons name="lock-reset" size={20} color="#004BA8" />
+            <Text style={styles.actionText}>Change Password</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.actionItem}>
             <MaterialCommunityIcons name="bell" size={20} color="#004BA8" />
             <Text style={styles.actionText}>Notification Preferences</Text>
@@ -301,6 +337,52 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={[styles.modalIconCircle, { backgroundColor: '#E3F2FD' }]}>
+              <MaterialCommunityIcons name="lock-reset" size={40} color="#004BA8" />
+            </View>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Current Password"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="New Password (min 6 characters)"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowPasswordModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, { backgroundColor: '#004BA8' }, passwordLoading && { opacity: 0.6 }]}
+                onPress={handleChangePassword}
+                disabled={passwordLoading}
+              >
+                <Text style={styles.modalConfirmText}>{passwordLoading ? 'Saving...' : 'Change'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* SweetAlert-style Logout Modal */}
       <Modal
@@ -603,6 +685,18 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  passwordInput: {
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    color: '#333',
+    width: '100%',
   },
 });
 

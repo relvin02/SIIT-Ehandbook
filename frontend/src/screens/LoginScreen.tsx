@@ -61,7 +61,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         dispatch(authActions.setToken(response.data.token));
         dispatch(
           authActions.setRole(
-            response.data.user.role === 'admin' ? 'admin' : 'student'
+            response.data.user.role === 'admin' ? 'admin' : response.data.user.role === 'faculty' ? 'faculty' : 'student'
           )
         );
         // Register for push notifications after successful login

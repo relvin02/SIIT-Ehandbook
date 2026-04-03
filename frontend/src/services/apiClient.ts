@@ -184,6 +184,11 @@ export const profileService = {
     const response = await apiClient.put('/profile', data);
     return response.data.data;
   },
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    const response = await apiClient.put('/profile/change-password', { currentPassword, newPassword });
+    return response.data;
+  },
 };
 
 /**
@@ -210,14 +215,25 @@ export const notificationsService = {
  * User Management Service (Admin only)
  */
 export const userManagementService = {
-  async getStudents() {
-    const response = await apiClient.get('/auth/users');
+  async getUsers(role?: string) {
+    const params = role ? `?role=${role}` : '';
+    const response = await apiClient.get(`/auth/users${params}`);
     return response.data.data;
   },
 
-  async createStudent(data: { name: string; studentId: string; password: string }) {
+  // Keep backward compat alias
+  async getStudents() {
+    return this.getUsers();
+  },
+
+  async createUser(data: { name: string; studentId?: string; email?: string; password: string; role?: string }) {
     const response = await apiClient.post('/auth/users', data);
     return response.data;
+  },
+
+  // Keep backward compat alias
+  async createStudent(data: { name: string; studentId: string; password: string }) {
+    return this.createUser(data);
   },
 
   async updateStudent(id: string, data: { name?: string; password?: string }) {
