@@ -286,6 +286,7 @@ const ManageUsersScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Full Name"
+              placeholderTextColor="#999"
               value={addName}
               onChangeText={setAddName}
             />
@@ -294,6 +295,7 @@ const ManageUsersScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Student ID (e.g. STU001)"
+                placeholderTextColor="#999"
                 value={addStudentId}
                 onChangeText={setAddStudentId}
                 autoCapitalize="characters"
@@ -302,6 +304,7 @@ const ManageUsersScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Email"
+                placeholderTextColor="#999"
                 value={addEmail}
                 onChangeText={setAddEmail}
                 keyboardType="email-address"
@@ -312,6 +315,7 @@ const ManageUsersScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Password (min 6 characters)"
+              placeholderTextColor="#999"
               value={addPassword}
               onChangeText={setAddPassword}
               secureTextEntry
@@ -400,6 +404,7 @@ const ManageUsersScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Full Name"
+                placeholderTextColor="#999"
                 value={editName}
                 onChangeText={setEditName}
               />
@@ -431,6 +436,7 @@ const ManageUsersScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="New Password (min 6 characters)"
+                placeholderTextColor="#999"
                 value={resetPassword}
                 onChangeText={setResetPasswordVal}
                 secureTextEntry
