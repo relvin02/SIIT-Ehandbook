@@ -159,18 +159,23 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   key={video._id || video.id}
                   style={styles.videoCard}
                   onPress={() => setActiveVideo(video)}
+                  activeOpacity={0.9}
                 >
-                  {video.thumbnailUrl ? (
-                    <Image source={{ uri: video.thumbnailUrl }} style={styles.videoThumbnail} />
-                  ) : (
-                    <View style={[styles.videoThumbnail, styles.videoPlaceholder]}>
-                      <MaterialCommunityIcons name="play-circle" size={40} color="#fff" />
-                    </View>
-                  )}
+                  <Video
+                    source={{ uri: video.url }}
+                    style={styles.videoThumbnail}
+                    resizeMode={ResizeMode.COVER}
+                    shouldPlay
+                    isMuted
+                    isLooping
+                  />
                   <View style={styles.playOverlay}>
-                    <MaterialCommunityIcons name="play-circle" size={36} color="rgba(255,255,255,0.9)" />
+                    <MaterialCommunityIcons name="play-circle" size={40} color="rgba(255,255,255,0.9)" />
                   </View>
-                  <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+                  <View style={styles.videoCardBottom}>
+                    <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+                    <Text style={styles.videoTapHint}>Tap to play with sound</Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -336,8 +341,10 @@ const styles = StyleSheet.create({
   headerCard: {
     backgroundColor: '#1B5E20',
     padding: 25,
-    paddingTop: 40,
-    paddingBottom: 40,
+    paddingTop: 45,
+    paddingBottom: 45,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerRow: {
     flexDirection: 'row',
@@ -365,27 +372,27 @@ const styles = StyleSheet.create({
   },
   quickActionsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    marginTop: -20,
+    paddingHorizontal: 12,
+    marginTop: -25,
     marginBottom: 20,
     justifyContent: 'space-between',
   },
   quickActionButton: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 14,
+    padding: 16,
     alignItems: 'center',
-    width: '30%',
-    elevation: 3,
+    width: '31%',
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
   },
   quickActionText: {
     fontSize: 11,
     color: '#004BA8',
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -401,10 +408,14 @@ const styles = StyleSheet.create({
   },
   announcementCard: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 10,
-    elevation: 2,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
     borderLeftWidth: 4,
     borderLeftColor: '#004BA8',
   },
@@ -524,14 +535,14 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH * 0.8,
     maxWidth: 360,
     marginRight: 12,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    borderRadius: 14,
+    backgroundColor: '#000',
     alignSelf: 'center',
-    elevation: 3,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     overflow: 'hidden',
   },
   videoScrollContainer: {
@@ -541,8 +552,8 @@ const styles = StyleSheet.create({
   },
   videoThumbnail: {
     width: '100%',
-    height: 120,
-    backgroundColor: '#1B5E20',
+    height: 180,
+    backgroundColor: '#111',
   },
   videoPlaceholder: {
     justifyContent: 'center',
@@ -550,16 +561,27 @@ const styles = StyleSheet.create({
   },
   playOverlay: {
     position: 'absolute',
-    top: 40,
+    top: 0,
     left: 0,
     right: 0,
+    height: 180,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  videoCardBottom: {
+    padding: 12,
+    backgroundColor: '#fff',
   },
   videoTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#333',
-    padding: 10,
+  },
+  videoTapHint: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 3,
   },
   videoModal: {
     flex: 1,
@@ -593,11 +615,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1B5E20',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 3,
+    borderRadius: 14,
+    padding: 18,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
   },

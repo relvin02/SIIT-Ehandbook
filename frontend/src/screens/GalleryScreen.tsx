@@ -180,9 +180,17 @@ const GalleryScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <MaterialCommunityIcons name="image-multiple" size={32} color="#004BA8" />
+          <View style={styles.headerIconBg}>
+            <MaterialCommunityIcons name="image-multiple" size={28} color="#fff" />
+          </View>
           <Text style={styles.headerTitle}>Photo Gallery</Text>
           <Text style={styles.headerSubtitle}>SIIT Highlights & Memories</Text>
+          {filteredImages.length > 0 && (
+            <View style={styles.photoCountBadge}>
+              <MaterialCommunityIcons name="camera" size={14} color="#004BA8" />
+              <Text style={styles.photoCountText}>{filteredImages.length} Photos</Text>
+            </View>
+          )}
         </View>
 
         {/* Category Tabs */}
@@ -235,16 +243,23 @@ const GalleryScreen = () => {
                 key={img._id}
                 style={styles.gridItem}
                 onPress={() => openSlideshow(index)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <Image source={{ uri: img.image }} style={styles.gridImage} />
+                <Image source={{ uri: img.image }} style={styles.gridImage} resizeMode="cover" />
+                {/* Bottom gradient overlay */}
+                <View style={styles.gridGradient} />
                 <View style={styles.gridOverlay}>
-                  <Text style={styles.gridTitle} numberOfLines={1}>{img.title}</Text>
+                  <Text style={styles.gridTitle} numberOfLines={2}>{img.title}</Text>
                   {img.category !== 'General' && (
                     <View style={styles.gridBadge}>
                       <Text style={styles.gridBadgeText}>{img.category}</Text>
                     </View>
                   )}
+                </View>
+
+                {/* Photo icon */}
+                <View style={styles.gridPhotoIcon}>
+                  <MaterialCommunityIcons name="image" size={14} color="rgba(255,255,255,0.8)" />
                 </View>
 
                 {/* Admin actions */}
@@ -417,42 +432,70 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    backgroundColor: '#004BA8',
+  },
+  headerIconBg: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#004BA8',
-    marginTop: 8,
+    color: '#fff',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255,255,255,0.75)',
     marginTop: 4,
+  },
+  photoCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    marginTop: 12,
+    gap: 6,
+  },
+  photoCountText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#004BA8',
   },
   // Category tabs
   categoryTabs: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     gap: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   categoryTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#e0e0e0',
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 22,
+    backgroundColor: '#f0f2f5',
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   categoryTabActive: {
     backgroundColor: '#004BA8',
+    borderColor: '#004BA8',
   },
   categoryTabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#555',
   },
   categoryTabTextActive: {
     color: '#fff',
@@ -488,62 +531,90 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
+    paddingTop: 8,
   },
   gridItem: {
-    width: (SCREEN_WIDTH - 24) / 2,
-    height: (SCREEN_WIDTH - 24) / 2,
-    margin: 4,
-    borderRadius: 12,
+    width: (SCREEN_WIDTH - 30) / 2,
+    height: ((SCREEN_WIDTH - 30) / 2) * 1.3,
+    margin: 5,
+    borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#ddd',
+    backgroundColor: '#e8e8e8',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   gridImage: {
     width: '100%',
     height: '100%',
+  },
+  gridGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '55%',
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   gridOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   gridTitle: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
+    lineHeight: 17,
   },
   gridBadge: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 2,
+    backgroundColor: 'rgba(0,75,168,0.7)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
     alignSelf: 'flex-start',
   },
   gridBadgeText: {
     color: '#fff',
     fontSize: 10,
+    fontWeight: '600',
+  },
+  gridPhotoIcon: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 10,
+    padding: 4,
   },
   gridActions: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: 8,
+    right: 8,
     flexDirection: 'row',
-    gap: 4,
+    gap: 6,
   },
   gridEditBtn: {
-    backgroundColor: 'rgba(0,75,168,0.8)',
-    padding: 6,
-    borderRadius: 6,
+    backgroundColor: 'rgba(0,75,168,0.85)',
+    padding: 7,
+    borderRadius: 8,
   },
   gridDeleteBtn: {
-    backgroundColor: 'rgba(211,47,47,0.8)',
-    padding: 6,
-    borderRadius: 6,
+    backgroundColor: 'rgba(211,47,47,0.85)',
+    padding: 7,
+    borderRadius: 8,
   },
   // Slideshow
   slideshowContainer: {
