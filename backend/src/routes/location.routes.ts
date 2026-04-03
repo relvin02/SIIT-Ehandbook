@@ -148,8 +148,8 @@ router.get('/:studentId', authenticate, authorize(['admin']), async (req: AuthRe
  * Helper function to check if location was recently updated (within 5 minutes)
  */
 function isRecentlyActive(lastUpdate: Date): boolean {
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  return new Date(lastUpdate) > fiveMinutesAgo;
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+  return new Date(lastUpdate) > tenMinutesAgo;
 }
 
 export default router;

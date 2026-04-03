@@ -49,8 +49,8 @@ export async function startBackgroundLocation() {
   if (!isRegistered) {
     await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
       accuracy: Location.Accuracy.High,
-      timeInterval: 5 * 60 * 1000, // every 5 minutes
-      distanceInterval: 50, // or every 50 meters
+      timeInterval: 3 * 60 * 1000, // every 3 minutes
+      distanceInterval: 30, // or every 30 meters
       showsBackgroundLocationIndicator: true,
       foregroundService: {
         notificationTitle: 'SIIT eHandbook',
