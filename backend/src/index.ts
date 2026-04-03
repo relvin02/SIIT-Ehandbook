@@ -16,6 +16,7 @@ import notificationRoutes from './routes/notifications.routes';
 import mediaRoutes from './routes/media.routes';
 import locationRoutes from './routes/location.routes';
 import orgchartRoutes from './routes/orgchart.routes';
+import galleryRoutes from './routes/gallery.routes';
 
 // Load environment variables
 dotenv.config();
@@ -50,6 +51,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/orgchart', orgchartRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

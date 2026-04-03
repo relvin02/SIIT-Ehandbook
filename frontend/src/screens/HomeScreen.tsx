@@ -207,6 +207,21 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Photo Gallery Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.hymnButton, { backgroundColor: '#6A1B9A' }]}
+            onPress={() => navigation.navigate('Gallery')}
+          >
+            <MaterialCommunityIcons name="image-multiple" size={28} color="#fff" />
+            <View style={styles.hymnTextContainer}>
+              <Text style={styles.hymnButtonTitle}>Photo Gallery</Text>
+              <Text style={styles.hymnButtonSubtitle}>Passers, events & highlights</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
         {/* Info Cards */}
         <View style={styles.infoCardsContainer}>
           <InfoCard

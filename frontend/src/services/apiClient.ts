@@ -339,4 +339,35 @@ export const orgChartService = {
   },
 };
 
+/**
+ * Gallery Service
+ */
+export const galleryService = {
+  async getAll(category?: string) {
+    const params = category ? { category } : {};
+    const response = await apiClient.get('/gallery', { params });
+    return response.data.data;
+  },
+
+  async getCategories() {
+    const response = await apiClient.get('/gallery/categories');
+    return response.data.data;
+  },
+
+  async create(data: { title: string; description?: string; image: string; category?: string; order?: number }) {
+    const response = await apiClient.post('/gallery', data);
+    return response.data.data;
+  },
+
+  async update(id: string, data: any) {
+    const response = await apiClient.put(`/gallery/${id}`, data);
+    return response.data.data;
+  },
+
+  async remove(id: string) {
+    const response = await apiClient.delete(`/gallery/${id}`);
+    return response.data;
+  },
+};
+
 export default apiClient;

@@ -24,6 +24,7 @@ import ManageMediaScreen from './screens/ManageMediaScreen';
 import ChatScreen from './screens/ChatScreen';
 import StudentLocationsScreen from './screens/StudentLocationsScreen';
 import OrgChartScreen from './screens/OrgChartScreen';
+import GalleryScreen from './screens/GalleryScreen';
 
 // Store
 import store from './store';
@@ -351,6 +352,17 @@ function AppInner() {
                 headerTitleStyle: { fontWeight: 'bold' },
               }}
             />
+            <Stack.Screen
+              name="Gallery"
+              component={GalleryScreen}
+              options={{
+                title: 'Photo Gallery',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
           </Stack.Group>
         ) : role === 'faculty' ? (
           <Stack.Group>
@@ -386,6 +398,17 @@ function AppInner() {
               component={OrgChartScreen}
               options={{
                 title: 'Organizational Chart',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="Gallery"
+              component={GalleryScreen}
+              options={{
+                title: 'Photo Gallery',
                 headerShown: true,
                 headerStyle: { backgroundColor: '#004BA8' },
                 headerTintColor: '#fff',
@@ -431,6 +454,17 @@ function AppInner() {
               component={OrgChartScreen}
               options={{
                 title: 'Organizational Chart',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="Gallery"
+              component={GalleryScreen}
+              options={{
+                title: 'Photo Gallery',
                 headerShown: true,
                 headerStyle: { backgroundColor: '#004BA8' },
                 headerTintColor: '#fff',

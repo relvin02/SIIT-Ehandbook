@@ -283,3 +283,41 @@ const orgChartMemberSchema = new mongoose.Schema({
 });
 
 export const OrgChartMember = mongoose.model('OrgChartMember', orgChartMemberSchema);
+
+// Gallery Schema (admin uploads images, students view as slideshow)
+const gallerySchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    default: '',
+  },
+  image: {
+    type: String, // base64
+    required: true,
+  },
+  category: {
+    type: String,
+    default: 'General',
+  },
+  order: {
+    type: Number,
+    default: 0,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const Gallery = mongoose.model('Gallery', gallerySchema);
