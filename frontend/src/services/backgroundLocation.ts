@@ -40,24 +40,36 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async (task: TaskManagerTaskBody) => 
 });
 
 export async function startBackgroundLocation() {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') return;
-  const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-  if (bgStatus !== 'granted') return;
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      console.warn('Foreground location permission denied');
+      return;
+    }
+    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+    if (bgStatus !== 'granted') {
+      console.warn('Background location permission denied — location will only update while app is open');
+      return;
+    }
 
-  const isRegistered = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
-  if (!isRegistered) {
-    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-      accuracy: Location.Accuracy.High,
-      timeInterval: 3 * 60 * 1000, // every 3 minutes
-      distanceInterval: 30, // or every 30 meters
-      showsBackgroundLocationIndicator: true,
-      foregroundService: {
-        notificationTitle: 'SIIT eHandbook',
-        notificationBody: 'Location tracking is active.',
-      },
-      pausesUpdatesAutomatically: false,
-    });
+    const isRegistered = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+    if (!isRegistered) {
+      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 2 * 60 * 1000, // every 2 minutes
+        distanceInterval: 0, // update even when stationary
+        showsBackgroundLocationIndicator: true,
+        foregroundService: {
+          notificationTitle: 'SIIT eHandbook',
+          notificationBody: 'Location tracking is active.',
+        },
+        pausesUpdatesAutomatically: false,
+        activityType: Location.ActivityType.Other,
+      });
+    }
+    console.log('Background location tracking started');
+  } catch (err) {
+    console.error('Failed to start background location:', err);
   }
 }
 
