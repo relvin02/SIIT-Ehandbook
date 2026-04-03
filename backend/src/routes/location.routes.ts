@@ -80,7 +80,7 @@ router.post('/update', authenticate, async (req: AuthRequest, res: express.Respo
 router.get('/all', authenticate, authorize(['admin']), async (_req: AuthRequest, res: express.Response) => {
   try {
     const students = await User.find({ role: 'student' })
-      .select('_id name email studentId location')
+      .select('_id name email studentId location avatar')
       .exec();
 
     const studentsWithLocation = students.map((student: any) => ({
@@ -89,6 +89,7 @@ router.get('/all', authenticate, authorize(['admin']), async (_req: AuthRequest,
       email: student.email,
       studentId: student.studentId,
       location: student.location,
+      avatar: student.avatar || null,
       isOnline: student.location?.lastUpdate ? isRecentlyActive(student.location.lastUpdate) : false,
     }));
 

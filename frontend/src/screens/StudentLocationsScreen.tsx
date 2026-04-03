@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Modal,
   RefreshControl,
+  Image,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ interface StudentLocation {
   name: string;
   email: string;
   studentId: string;
+  avatar: string | null;
   location: {
     latitude: number;
     longitude: number;
@@ -241,6 +243,13 @@ const StudentLocationsScreen: React.FC = () => {
                 onPress={() => setSelectedStudent(student)}
               >
                 <View style={styles.studentHeader}>
+                  {student.avatar ? (
+                    <Image source={{ uri: student.avatar }} style={styles.studentAvatar} />
+                  ) : (
+                    <View style={styles.studentAvatarPlaceholder}>
+                      <MaterialCommunityIcons name="account" size={28} color="#fff" />
+                    </View>
+                  )}
                   <View style={styles.studentInfo}>
                     <Text style={styles.studentName}>{student.name}</Text>
                     <Text style={styles.studentId}>ID: {student.studentId}</Text>
@@ -297,6 +306,32 @@ const StudentLocationsScreen: React.FC = () => {
             </View>
 
             <ScrollView style={styles.modalContent}>
+              {/* Student Avatar */}
+              <View style={styles.modalAvatarContainer}>
+                {selectedStudent.avatar ? (
+                  <Image source={{ uri: selectedStudent.avatar }} style={styles.modalAvatar} />
+                ) : (
+                  <View style={styles.modalAvatarPlaceholder}>
+                    <MaterialCommunityIcons name="account" size={60} color="#fff" />
+                  </View>
+                )}
+                <Text style={styles.modalStudentName}>{selectedStudent.name}</Text>
+                <View style={[
+                  styles.statusBadge,
+                  selectedStudent.isOnline ? styles.statusOnline : styles.statusOffline,
+                  { marginTop: 8 }
+                ]}>
+                  <MaterialCommunityIcons
+                    name={selectedStudent.isOnline ? 'circle' : 'circle-outline'}
+                    size={8}
+                    color="#fff"
+                  />
+                  <Text style={styles.statusText}>
+                    {selectedStudent.isOnline ? 'Active' : 'Inactive'}
+                  </Text>
+                </View>
+              </View>
+
               <View style={styles.detailCard}>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Name:</Text>
@@ -441,6 +476,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  studentAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
+  studentAvatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#004BA8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   studentInfo: {
     flex: 1,
@@ -597,6 +647,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     fontStyle: 'italic',
+  },
+  modalAvatarContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 8,
+  },
+  modalAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#004BA8',
+  },
+  modalAvatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#004BA8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalStudentName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 12,
   },
 });
 
