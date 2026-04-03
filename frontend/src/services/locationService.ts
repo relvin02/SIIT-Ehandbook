@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState, AppStateStatus } from 'react-native';
 
 const API_URL = 'https://siit-ehandbook-api.onrender.com/api';
 
@@ -11,7 +12,10 @@ interface LocationCoordinates {
 class LocationService {
   private locationSubscription: any = null;
   private updateInterval: NodeJS.Timer | null = null;
+  private appStateSubscription: any = null;
   private isTrackingEnabled = false;
+  private currentToken: string = '';
+  private lastSentTime = 0;
 
   /**
    * Request location permissions
@@ -68,8 +72,10 @@ class LocationService {
   }
 
   /**
-   * Start background location tracking
-   * Updates location every 2 minutes
+   * Start location tracking with multiple strategies:
+   * 1. watchPositionAsync (native, reliable when app is open)
+   * 2. setInterval as backup
+   * 3. AppState listener to update when app comes to foreground
    */
   async startLocationTracking(token: string): Promise<void> {
     try {
@@ -88,26 +94,56 @@ class LocationService {
       }
 
       this.isTrackingEnabled = true;
+      this.currentToken = token;
+
+      // Save token for background task
+      await AsyncStorage.setItem('authToken', token);
 
       // Send location immediately
       await this.sendLocationToBackend(token);
 
-      // Then set up periodic updates (every 2 minutes)
+      // Strategy 1: Native watch (reliable while app is open)
+      this.locationSubscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 90 * 1000, // every 90 seconds
+          distanceInterval: 0, // even if stationary
+        },
+        async (_location) => {
+          // Throttle: only send every 90 seconds
+          const now = Date.now();
+          if (now - this.lastSentTime > 85 * 1000) {
+            await this.sendLocationToBackend(token);
+          }
+        }
+      );
+
+      // Strategy 2: setInterval backup (in case watch doesn't fire)
       this.updateInterval = setInterval(async () => {
         if (this.isTrackingEnabled) {
           await this.sendLocationToBackend(token);
         }
-      }, 2 * 60 * 1000); // 2 minutes
+      }, 2 * 60 * 1000);
 
-      console.log('Location tracking started');
+      // Strategy 3: AppState listener - update when app comes to foreground
+      this.appStateSubscription = AppState.addEventListener('change', this.handleAppStateChange);
+
+      console.log('Location tracking started (watch + interval + appstate)');
     } catch (error) {
       console.error('Error starting location tracking:', error);
       this.isTrackingEnabled = false;
     }
   }
 
+  private handleAppStateChange = async (nextState: AppStateStatus) => {
+    if (nextState === 'active' && this.isTrackingEnabled && this.currentToken) {
+      console.log('App came to foreground, updating location...');
+      await this.sendLocationToBackend(this.currentToken);
+    }
+  };
+
   /**
-   * Stop background location tracking
+   * Stop location tracking
    */
   stopLocationTracking(): void {
     try {
@@ -121,10 +157,25 @@ class LocationService {
         this.locationSubscription = null;
       }
 
+      if (this.appStateSubscription) {
+        this.appStateSubscription.remove();
+        this.appStateSubscription = null;
+      }
+
       this.isTrackingEnabled = false;
+      this.currentToken = '';
       console.log('Location tracking stopped');
     } catch (error) {
       console.error('Error stopping location tracking:', error);
+    }
+  }
+
+  /**
+   * Force send current location now (called externally)
+   */
+  async forceUpdate(): Promise<void> {
+    if (this.currentToken) {
+      await this.sendLocationToBackend(this.currentToken);
     }
   }
 
@@ -159,6 +210,7 @@ class LocationService {
 
       const data = await response.json();
       if (data.success) {
+        this.lastSentTime = Date.now();
         console.log('Location updated successfully');
         return true;
       }

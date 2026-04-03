@@ -2,7 +2,6 @@ import * as TaskManager from 'expo-task-manager';
 import type { TaskManagerTaskBody } from 'expo-task-manager';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const API_URL = 'https://siit-ehandbook-api.onrender.com/api/location/update';
@@ -20,20 +19,28 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async (task: TaskManagerTaskBody) => 
       const location = locations[0];
       try {
         const token = await AsyncStorage.getItem('authToken');
-        if (!token) return;
-        await axios.post(
-          API_URL,
-          {
+        if (!token) {
+          console.warn('No auth token for background location');
+          return;
+        }
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
-            timestamp: location.timestamp,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Background location update failed:', response.status);
+        }
       } catch (err) {
-        // Optionally log or handle error
+        console.error('Background location send error:', err);
       }
     }
   }
