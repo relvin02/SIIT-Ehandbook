@@ -11,7 +11,7 @@ interface LocationCoordinates {
 
 class LocationService {
   private locationSubscription: any = null;
-  private updateInterval: NodeJS.Timer | null = null;
+  private updateInterval: ReturnType<typeof setInterval> | null = null;
   private appStateSubscription: any = null;
   private isTrackingEnabled = false;
   private currentToken: string = '';

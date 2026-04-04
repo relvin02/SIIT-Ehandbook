@@ -196,6 +196,7 @@ const StudentLocationsScreen: React.FC = () => {
         <MapView
           style={styles.map}
           initialRegion={mapRegion}
+          mapType="satellite"
         >
           {students.map((student) => {
             // Validate coordinates before rendering marker
