@@ -274,20 +274,20 @@ const StudentLocationsScreen: React.FC = () => {
               >
                 <View style={styles.pinContainer}>
                   {/* Teardrop pin body */}
-                  <View style={[styles.pinTeardrop, { backgroundColor: student.isOnline ? '#D32F2F' : '#FF9800' }]}>
+                  <View style={[styles.pinTeardrop, { backgroundColor: student.isOnline ? '#004BA8' : '#FF9800' }]}>
                     {/* Avatar circle */}
                     <View style={styles.pinAvatarWrapper}>
                       {student.avatar ? (
                         <Image source={{ uri: student.avatar }} style={styles.pinAvatar} />
                       ) : (
-                        <View style={[styles.pinAvatarPlaceholder, { backgroundColor: student.isOnline ? '#B71C1C' : '#E65100' }]}>
+                        <View style={[styles.pinAvatarPlaceholder, { backgroundColor: student.isOnline ? '#003380' : '#E65100' }]}>
                           <MaterialCommunityIcons name="account" size={20} color="#fff" />
                         </View>
                       )}
                     </View>
                   </View>
                   {/* Teardrop point */}
-                  <View style={[styles.pinPoint, { borderTopColor: student.isOnline ? '#D32F2F' : '#FF9800' }]} />
+                  <View style={[styles.pinPoint, { borderTopColor: student.isOnline ? '#004BA8' : '#FF9800' }]} />
                 </View>
               </Marker>
             );
