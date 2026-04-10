@@ -240,7 +240,6 @@ const StudentLocationsScreen: React.FC = () => {
                 <Marker
                   key={`cluster-${index}`}
                   coordinate={cluster.center}
-                  tracksViewChanges={false}
                   onPress={() => {
                     setClusterStudents(cluster.students);
                     setShowClusterModal(true);
@@ -272,7 +271,6 @@ const StudentLocationsScreen: React.FC = () => {
                   latitude: student.location.latitude,
                   longitude: student.location.longitude,
                 }}
-                tracksViewChanges={false}
                 onPress={() => setSelectedStudent(student)}
               >
                 <View style={styles.pinContainer}>
