@@ -12,7 +12,7 @@ import {
   Image,
   FlatList,
 } from 'react-native';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -240,6 +240,7 @@ const StudentLocationsScreen: React.FC = () => {
                 <Marker
                   key={`cluster-${index}`}
                   coordinate={cluster.center}
+                  tracksViewChanges={false}
                   onPress={() => {
                     setClusterStudents(cluster.students);
                     setShowClusterModal(true);
@@ -271,6 +272,7 @@ const StudentLocationsScreen: React.FC = () => {
                   latitude: student.location.latitude,
                   longitude: student.location.longitude,
                 }}
+                tracksViewChanges={false}
                 onPress={() => setSelectedStudent(student)}
               >
                 <View style={styles.pinContainer}>
@@ -289,15 +291,6 @@ const StudentLocationsScreen: React.FC = () => {
                   <View style={[styles.pinStick, { backgroundColor: student.isOnline ? '#4CAF50' : '#FF9800' }]} />
                   <View style={styles.pinShadow} />
                 </View>
-                <Callout tooltip>
-                  <View style={styles.calloutContainer}>
-                    <Text style={styles.calloutName}>{student.name || 'Unknown'}</Text>
-                    <Text style={styles.calloutId}>{student.studentId || 'N/A'}</Text>
-                    <Text style={[styles.calloutStatus, { color: student.isOnline ? '#4CAF50' : '#FF9800' }]}>
-                      {student.isOnline ? '● Active' : '○ Inactive'}
-                    </Text>
-                  </View>
-                </Callout>
               </Marker>
             );
           })}
@@ -753,33 +746,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#f0f0f0',
     marginLeft: 70,
-  },
-  calloutContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 10,
-    minWidth: 120,
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  calloutName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  calloutId: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 2,
-  },
-  calloutStatus: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 4,
   },
   listContainer: {
     flex: 1,
