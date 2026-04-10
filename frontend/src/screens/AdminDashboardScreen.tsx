@@ -146,6 +146,36 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
         </TouchableOpacity>
 
+        {/* Emergency Alerts Button */}
+        <TouchableOpacity
+          style={[styles.mediaButton, { backgroundColor: '#D32F2F' }]}
+          onPress={() => navigation.navigate('EmergencyAlerts')}
+        >
+          <MaterialCommunityIcons name="alert-octagon" size={20} color="#fff" />
+          <Text style={styles.mediaButtonText}>Emergency Alerts</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+
+        {/* School Calendar Button */}
+        <TouchableOpacity
+          style={[styles.mediaButton, { backgroundColor: '#00796B' }]}
+          onPress={() => navigation.navigate('SchoolCalendar')}
+        >
+          <MaterialCommunityIcons name="calendar-month" size={20} color="#fff" />
+          <Text style={styles.mediaButtonText}>School Calendar</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+
+        {/* Student Feedback Button */}
+        <TouchableOpacity
+          style={[styles.mediaButton, { backgroundColor: '#E65100' }]}
+          onPress={() => navigation.navigate('FeedbackManagement')}
+        >
+          <MaterialCommunityIcons name="comment-text-multiple" size={20} color="#fff" />
+          <Text style={styles.mediaButtonText}>Student Feedback</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+
         {/* Create Button */}
         <TouchableOpacity
           style={styles.createButton}

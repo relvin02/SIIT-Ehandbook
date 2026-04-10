@@ -370,4 +370,93 @@ export const galleryService = {
   },
 };
 
+/**
+ * Emergency Alert Service
+ */
+export const emergencyAlertService = {
+  async getActiveAlerts() {
+    const response = await apiClient.get('/emergency');
+    return response.data.data;
+  },
+
+  async getAllAlerts() {
+    const response = await apiClient.get('/emergency/all');
+    return response.data.data;
+  },
+
+  async createAlert(data: { title: string; message: string; severity?: string; expiresAt?: string }) {
+    const response = await apiClient.post('/emergency', data);
+    return response.data.data;
+  },
+
+  async deactivateAlert(id: string) {
+    const response = await apiClient.put(`/emergency/${id}/deactivate`);
+    return response.data;
+  },
+
+  async deleteAlert(id: string) {
+    const response = await apiClient.delete(`/emergency/${id}`);
+    return response.data;
+  },
+};
+
+/**
+ * Calendar Service
+ */
+export const calendarService = {
+  async getEvents(month?: number, year?: number) {
+    const params: any = {};
+    if (month) params.month = month;
+    if (year) params.year = year;
+    const response = await apiClient.get('/calendar', { params });
+    return response.data.data;
+  },
+
+  async createEvent(data: { title: string; description?: string; eventType?: string; startDate: string; endDate?: string; isAllDay?: boolean }) {
+    const response = await apiClient.post('/calendar', data);
+    return response.data.data;
+  },
+
+  async updateEvent(id: string, data: any) {
+    const response = await apiClient.put(`/calendar/${id}`, data);
+    return response.data.data;
+  },
+
+  async deleteEvent(id: string) {
+    const response = await apiClient.delete(`/calendar/${id}`);
+    return response.data;
+  },
+};
+
+/**
+ * Feedback Service
+ */
+export const feedbackService = {
+  async getAll(filters?: { status?: string; category?: string }) {
+    const params = filters || {};
+    const response = await apiClient.get('/feedback', { params });
+    return response.data.data;
+  },
+
+  async getStats() {
+    const response = await apiClient.get('/feedback/stats');
+    return response.data.data;
+  },
+
+  async submit(data: { category?: string; rating: number; message: string; isAnonymous?: boolean }) {
+    const response = await apiClient.post('/feedback', data);
+    return response.data;
+  },
+
+  async updateStatus(id: string, status: string) {
+    const response = await apiClient.put(`/feedback/${id}/status`, { status });
+    return response.data;
+  },
+
+  async remove(id: string) {
+    const response = await apiClient.delete(`/feedback/${id}`);
+    return response.data;
+  },
+};
+
 export default apiClient;

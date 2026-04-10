@@ -21,6 +21,7 @@ import { profileService } from '../services/apiClient';
 import { authActions } from '../store';
 import { RootState } from '../store';
 import locationService from '../services/locationService';
+import { useTheme } from '../config/ThemeContext';
 
 type ProfileScreenProps = {
   navigation: any;
@@ -29,6 +30,7 @@ type ProfileScreenProps = {
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch();
   const { user, role } = useSelector((state: RootState) => state.auth);
+  const { theme, isDark, toggleTheme } = useTheme();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -206,10 +208,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        <View style={[styles.profileHeader, { backgroundColor: theme.dark ? '#1E1E1E' : '#004BA8' }]}>
           <TouchableOpacity style={styles.profileAvatar} onPress={handlePickAvatar} disabled={uploadingAvatar}>
             {profile?.avatar ? (
               <Image source={{ uri: profile.avatar }} style={styles.avatarImage} />
@@ -235,7 +237,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         {/* Profile Info */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Personal Information</Text>
             {!isEditing && (
               <TouchableOpacity onPress={() => setIsEditing(true)}>
                 <MaterialCommunityIcons name="pencil" size={20} color="#004BA8" />
@@ -347,27 +349,33 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Actions</Text>
 
           <TouchableOpacity
-            style={styles.actionItem}
+            style={[styles.actionItem, { backgroundColor: theme.card }]}
             onPress={() => { setShowPasswordModal(true); setCurrentPassword(''); setNewPassword(''); }}
           >
-            <MaterialCommunityIcons name="lock-reset" size={20} color="#004BA8" />
-            <Text style={styles.actionText}>Change Password</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+            <MaterialCommunityIcons name="lock-reset" size={20} color={theme.primary} />
+            <Text style={[styles.actionText, { color: theme.text }]}>Change Password</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem}>
-            <MaterialCommunityIcons name="bell" size={20} color="#004BA8" />
-            <Text style={styles.actionText}>Notification Preferences</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+          <TouchableOpacity style={[styles.actionItem, { backgroundColor: theme.card }]}>
+            <MaterialCommunityIcons name="bell" size={20} color={theme.primary} />
+            <Text style={[styles.actionText, { color: theme.text }]}>Notification Preferences</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem}>
-            <MaterialCommunityIcons name="help-circle" size={20} color="#004BA8" />
-            <Text style={styles.actionText}>Help & Support</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+          <TouchableOpacity style={[styles.actionItem, { backgroundColor: theme.card }]} onPress={toggleTheme}>
+            <MaterialCommunityIcons name={isDark ? 'weather-sunny' : 'weather-night'} size={20} color={isDark ? '#FFB300' : '#5C6BC0'} />
+            <Text style={[styles.actionText, { color: theme.text }]}>{isDark ? 'Light Mode' : 'Dark Mode'}</Text>
+            <MaterialCommunityIcons name={isDark ? 'toggle-switch' : 'toggle-switch-off'} size={28} color={isDark ? '#4CAF50' : theme.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.actionItem, { backgroundColor: theme.card }]}>
+            <MaterialCommunityIcons name="help-circle" size={20} color={theme.primary} />
+            <Text style={[styles.actionText, { color: theme.text }]}>Help & Support</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textMuted} />
           </TouchableOpacity>
         </View>
 

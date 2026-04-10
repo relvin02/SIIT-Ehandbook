@@ -17,6 +17,9 @@ import mediaRoutes from './routes/media.routes';
 import locationRoutes from './routes/location.routes';
 import orgchartRoutes from './routes/orgchart.routes';
 import galleryRoutes from './routes/gallery.routes';
+import emergencyRoutes from './routes/emergency.routes';
+import calendarRoutes from './routes/calendar.routes';
+import feedbackRoutes from './routes/feedback.routes';
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +55,9 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/orgchart', orgchartRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/emergency', emergencyRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -25,10 +25,17 @@ import ChatScreen from './screens/ChatScreen';
 import StudentLocationsScreen from './screens/StudentLocationsScreen';
 import OrgChartScreen from './screens/OrgChartScreen';
 import GalleryScreen from './screens/GalleryScreen';
+import EmergencyAlertScreen from './screens/EmergencyAlertScreen';
+import SchoolCalendarScreen from './screens/SchoolCalendarScreen';
+import FeedbackScreen from './screens/FeedbackScreen';
+import FeedbackManagementScreen from './screens/FeedbackManagementScreen';
 
 // Store
 import store from './store';
 import { authActions } from './store';
+
+// Theme
+import { ThemeProvider, useTheme } from './config/ThemeContext';
 
 // Services
 import { authService } from './services/apiClient';
@@ -43,6 +50,7 @@ const Tab = createBottomTabNavigator();
  * Bottom Navigation Tabs for Students
  */
 const StudentTabs = () => {
+  const { theme } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }: { route: any }) => ({
@@ -67,11 +75,12 @@ const StudentTabs = () => {
             <MaterialCommunityIcons name={iconName} size={size} color={color} />
           );
         },
-        tabBarActiveTintColor: '#004BA8',
-        tabBarInactiveTintColor: '#888',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textMuted,
+        tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder },
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#004BA8',
+          backgroundColor: theme.headerBg,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
@@ -117,6 +126,7 @@ const StudentTabs = () => {
  * Faculty/Staff Navigation Tabs (same as student but no location tracking)
  */
 const FacultyTabs = () => {
+  const { theme } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }: { route: any }) => ({
@@ -139,11 +149,12 @@ const FacultyTabs = () => {
             <MaterialCommunityIcons name={iconName} size={size} color={color} />
           );
         },
-        tabBarActiveTintColor: '#004BA8',
-        tabBarInactiveTintColor: '#888',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textMuted,
+        tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder },
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#004BA8',
+          backgroundColor: theme.headerBg,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
@@ -184,6 +195,7 @@ const FacultyTabs = () => {
  * Admin Navigation Tabs
  */
 const AdminTabs = () => {
+  const { theme } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }: { route: any }) => ({
@@ -206,11 +218,12 @@ const AdminTabs = () => {
             <MaterialCommunityIcons name={iconName} size={size} color={color} />
           );
         },
-        tabBarActiveTintColor: '#004BA8',
-        tabBarInactiveTintColor: '#888',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textMuted,
+        tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder },
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#004BA8',
+          backgroundColor: theme.headerBg,
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
@@ -363,6 +376,39 @@ function AppInner() {
                 headerTitleStyle: { fontWeight: 'bold' },
               }}
             />
+            <Stack.Screen
+              name="EmergencyAlerts"
+              component={EmergencyAlertScreen}
+              options={{
+                title: 'Emergency Alerts',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#D32F2F' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="SchoolCalendar"
+              component={SchoolCalendarScreen}
+              options={{
+                title: 'School Calendar',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="FeedbackManagement"
+              component={FeedbackManagementScreen}
+              options={{
+                title: 'Student Feedback',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
           </Stack.Group>
         ) : role === 'faculty' ? (
           <Stack.Group>
@@ -409,6 +455,28 @@ function AppInner() {
               component={GalleryScreen}
               options={{
                 title: 'Photo Gallery',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="SchoolCalendar"
+              component={SchoolCalendarScreen}
+              options={{
+                title: 'School Calendar',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="Feedback"
+              component={FeedbackScreen}
+              options={{
+                title: 'Feedback',
                 headerShown: true,
                 headerStyle: { backgroundColor: '#004BA8' },
                 headerTintColor: '#fff',
@@ -471,6 +539,28 @@ function AppInner() {
                 headerTitleStyle: { fontWeight: 'bold' },
               }}
             />
+            <Stack.Screen
+              name="SchoolCalendar"
+              component={SchoolCalendarScreen}
+              options={{
+                title: 'School Calendar',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="Feedback"
+              component={FeedbackScreen}
+              options={{
+                title: 'Feedback',
+                headerShown: true,
+                headerStyle: { backgroundColor: '#004BA8' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
           </Stack.Group>
         )}
       </Stack.Navigator>
@@ -484,7 +574,9 @@ function AppInner() {
 export default function App() {
   return (
     <ReduxProvider store={store}>
-      <AppInner />
+      <ThemeProvider>
+        <AppInner />
+      </ThemeProvider>
     </ReduxProvider>
   );
 }

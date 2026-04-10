@@ -321,3 +321,115 @@ const gallerySchema = new mongoose.Schema({
 });
 
 export const Gallery = mongoose.model('Gallery', gallerySchema);
+
+// Emergency Alert Model
+const emergencyAlertSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  message: {
+    type: String,
+    required: true,
+  },
+  severity: {
+    type: String,
+    enum: ['critical', 'warning', 'info'],
+    default: 'critical',
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  expiresAt: {
+    type: Date,
+    default: null,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const EmergencyAlert = mongoose.model('EmergencyAlert', emergencyAlertSchema);
+
+// Calendar Event Model
+const calendarEventSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    default: '',
+  },
+  eventType: {
+    type: String,
+    enum: ['enrollment', 'exam', 'holiday', 'graduation', 'sembreak', 'event', 'other'],
+    default: 'event',
+  },
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
+    type: Date,
+    default: null,
+  },
+  isAllDay: {
+    type: Boolean,
+    default: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const CalendarEvent = mongoose.model('CalendarEvent', calendarEventSchema);
+
+// Feedback Model
+const feedbackSchema = new mongoose.Schema({
+  category: {
+    type: String,
+    enum: ['academics', 'facilities', 'services', 'faculty', 'administration', 'other'],
+    default: 'other',
+  },
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    required: true,
+  },
+  message: {
+    type: String,
+    required: true,
+  },
+  isAnonymous: {
+    type: Boolean,
+    default: false,
+  },
+  submittedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'reviewed', 'resolved'],
+    default: 'pending',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const Feedback = mongoose.model('Feedback', feedbackSchema);

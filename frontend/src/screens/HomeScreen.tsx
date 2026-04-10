@@ -17,15 +17,17 @@ const seahawksLogo = require('../assets/seahawks.png');
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
-import { announcementsService, mediaService } from '../services/apiClient';
+import { announcementsService, mediaService, emergencyAlertService } from '../services/apiClient';
 import { announcementsActions } from '../store';
 import { RootState } from '../store';
 import { Announcement } from '../types';
+import { useTheme } from '../config/ThemeContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const dispatch = useDispatch();
+  const { theme } = useTheme();
   const { announcements, loading } = useSelector(
     (state: RootState) => state.announcements
   );
@@ -33,11 +35,22 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [videos, setVideos] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAnnouncements();
     fetchVideos();
+    fetchEmergencyAlerts();
   }, []);
+
+  const fetchEmergencyAlerts = async () => {
+    try {
+      const data = await emergencyAlertService.getActiveAlerts();
+      setEmergencyAlerts(data || []);
+    } catch (error) {
+      // Silently fail - alerts are secondary to main content
+    }
+  };
 
   const fetchVideos = async () => {
     try {
@@ -67,7 +80,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchAnnouncements(), fetchVideos()]);
+    await Promise.all([fetchAnnouncements(), fetchVideos(), fetchEmergencyAlerts()]);
     setRefreshing(false);
   };
 
@@ -80,7 +93,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -98,36 +111,70 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Emergency Alert Banners */}
+        {emergencyAlerts.length > 0 && emergencyAlerts.map((alert: any) => {
+          const colors: Record<string, { bg: string; border: string }> = {
+            critical: { bg: '#FFEBEE', border: '#D32F2F' },
+            warning: { bg: '#FFF3E0', border: '#F57C00' },
+            info: { bg: '#E3F2FD', border: '#1976D2' },
+          };
+          const c = colors[alert.severity] || colors.critical;
+          const emoji = alert.severity === 'critical' ? '🚨' : alert.severity === 'warning' ? '⚠️' : 'ℹ️';
+          return (
+            <View key={alert.id} style={{
+              backgroundColor: c.bg,
+              borderLeftWidth: 4,
+              borderLeftColor: c.border,
+              marginHorizontal: 12,
+              marginTop: 10,
+              borderRadius: 10,
+              padding: 14,
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}>
+              <Text style={{ fontSize: 22 }}>{emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.border }}>{alert.title}</Text>
+                <Text style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{alert.message}</Text>
+                <Text style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+                  {new Date(alert.createdAt).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity
-            style={styles.quickActionButton}
+            style={[styles.quickActionButton, { backgroundColor: theme.card }]}
             onPress={() => navigation.navigate('HandbookTab')}
           >
-            <MaterialCommunityIcons name="book" size={24} color="#004BA8" />
-            <Text style={styles.quickActionText}>Browse Handbook</Text>
+            <MaterialCommunityIcons name="book" size={24} color={theme.primary} />
+            <Text style={[styles.quickActionText, { color: theme.primary }]}>Browse Handbook</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickActionButton}
+            style={[styles.quickActionButton, { backgroundColor: theme.card }]}
             onPress={() => navigation.navigate('SearchTab')}
           >
-            <MaterialCommunityIcons name="magnify" size={24} color="#004BA8" />
-            <Text style={styles.quickActionText}>Search</Text>
+            <MaterialCommunityIcons name="magnify" size={24} color={theme.primary} />
+            <Text style={[styles.quickActionText, { color: theme.primary }]}>Search</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickActionButton}
+            style={[styles.quickActionButton, { backgroundColor: theme.card }]}
             onPress={() => navigation.navigate('BookmarksTab')}
           >
-            <MaterialCommunityIcons name="bookmark" size={24} color="#004BA8" />
-            <Text style={styles.quickActionText}>Bookmarks</Text>
+            <MaterialCommunityIcons name="bookmark" size={24} color={theme.primary} />
+            <Text style={[styles.quickActionText, { color: theme.primary }]}>Bookmarks</Text>
           </TouchableOpacity>
         </View>
 
         {/* Latest Announcements */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📢 Latest Announcements</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>📢 Latest Announcements</Text>
 
           {announcements.length === 0 ? (
             <View style={styles.emptyState}>
@@ -227,15 +274,51 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* School Calendar Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.hymnButton, { backgroundColor: '#00796B' }]}
+            onPress={() => navigation.navigate('SchoolCalendar')}
+          >
+            <MaterialCommunityIcons name="calendar-month" size={28} color="#fff" />
+            <View style={styles.hymnTextContainer}>
+              <Text style={styles.hymnButtonTitle}>School Calendar</Text>
+              <Text style={styles.hymnButtonSubtitle}>Enrollment, exams, holidays & events</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Feedback Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.hymnButton, { backgroundColor: '#E65100' }]}
+            onPress={() => navigation.navigate('Feedback')}
+          >
+            <MaterialCommunityIcons name="comment-text" size={28} color="#fff" />
+            <View style={styles.hymnTextContainer}>
+              <Text style={styles.hymnButtonTitle}>Give Feedback</Text>
+              <Text style={styles.hymnButtonSubtitle}>Rate & share your experience</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
         {/* Info Cards */}
         <View style={styles.infoCardsContainer}>
           <InfoCard
             title="📚 Handbook"
             description="Access complete school policies and guidelines"
+            cardBg={theme.card}
+            textColor={theme.text}
+            descColor={theme.textSecondary}
           />
           <InfoCard
             title="📞 Need Help?"
             description="Contact student services for support"
+            cardBg={theme.card}
+            textColor={theme.text}
+            descColor={theme.textSecondary}
           />
         </View>
       </ScrollView>
@@ -323,13 +406,16 @@ const AnnouncementCard: React.FC<{ announcement: Announcement; onPress?: () => v
 /**
  * Info Card Component
  */
-const InfoCard: React.FC<{ title: string; description: string }> = ({
+const InfoCard: React.FC<{ title: string; description: string; cardBg?: string; textColor?: string; descColor?: string }> = ({
   title,
   description,
+  cardBg,
+  textColor,
+  descColor,
 }) => (
-  <View style={styles.infoCard}>
-    <Text style={styles.infoTitle}>{title}</Text>
-    <Text style={styles.infoDescription}>{description}</Text>
+  <View style={[styles.infoCard, cardBg ? { backgroundColor: cardBg } : {}]}>
+    <Text style={[styles.infoTitle, textColor ? { color: textColor } : {}]}>{title}</Text>
+    <Text style={[styles.infoDescription, descColor ? { color: descColor } : {}]}>{description}</Text>
   </View>
 );
 
