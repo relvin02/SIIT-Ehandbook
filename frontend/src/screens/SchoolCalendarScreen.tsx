@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
@@ -152,6 +154,7 @@ const SchoolCalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Month Navigator */}
         <View style={styles.monthNav}>
@@ -294,6 +297,7 @@ const SchoolCalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           })
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Modal */}
       <Modal visible={alertModal.visible} transparent animationType="fade" onRequestClose={closeAlert}>

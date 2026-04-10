@@ -9,6 +9,8 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -165,6 +167,7 @@ const ManageMediaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Media Management</Text>
@@ -306,6 +309,7 @@ const ManageMediaScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* SweetAlert Modal */}
       <Modal visible={alertState.visible} transparent animationType="fade" onRequestClose={closeAlert}>

@@ -9,6 +9,8 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { emergencyAlertService } from '../services/apiClient';
@@ -128,6 +130,7 @@ const EmergencyAlertScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Send Alert Button */}
         <TouchableOpacity
@@ -266,6 +269,7 @@ const EmergencyAlertScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           })
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Alert Modal */}
       <Modal visible={alertModal.visible} transparent animationType="fade" onRequestClose={closeAlertModal}>

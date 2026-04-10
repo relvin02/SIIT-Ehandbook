@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -141,6 +143,7 @@ const EditSectionScreen: React.FC<EditSectionScreenProps> = ({ navigation }) => 
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView>
         {/* Create Button */}
         <TouchableOpacity
@@ -226,6 +229,7 @@ const EditSectionScreen: React.FC<EditSectionScreenProps> = ({ navigation }) => 
           ))}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Edit Section Modal */}
       {editingSection && (

@@ -10,6 +10,8 @@ import {
   TextInput,
   FlatList,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { announcementsService, handbookService, userManagementService } from '../services/apiClient';
@@ -108,6 +110,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView>
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
@@ -240,6 +243,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           ))}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* SweetAlert-style Modal */}
       <Modal visible={alertState.visible} transparent animationType="fade" onRequestClose={closeAlert}>

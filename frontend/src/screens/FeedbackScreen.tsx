@@ -9,6 +9,8 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { feedbackService } from '../services/apiClient';
@@ -86,6 +88,7 @@ const FeedbackScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header Info */}
         <View style={styles.headerCard}>
@@ -183,6 +186,7 @@ const FeedbackScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Error Modal */}
       <Modal visible={alertModal.visible} transparent animationType="fade" onRequestClose={() => setAlertModal(prev => ({ ...prev, visible: false }))}>

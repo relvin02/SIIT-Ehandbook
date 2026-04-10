@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { userManagementService } from '../services/apiClient';
@@ -226,6 +228,7 @@ const ManageUsersScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView>
         {/* Header */}
         <View style={styles.headerBar}>
@@ -391,6 +394,7 @@ const ManageUsersScreen: React.FC = () => {
           ))
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Edit Modal */}
       {editingUser && (
