@@ -91,12 +91,12 @@ const StudentTabs = () => {
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
-        options={{ title: 'Home' }}
+        options={{ title: 'Home', headerShown: false }}
       />
       <Tab.Screen
         name="HandbookTab"
         component={HandbookScreen}
-        options={{ title: 'Handbook' }}
+        options={{ title: 'Handbook', headerShown: false }}
       />
       <Tab.Screen
         name="SearchTab"
@@ -165,12 +165,12 @@ const FacultyTabs = () => {
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
-        options={{ title: 'Home' }}
+        options={{ title: 'Home', headerShown: false }}
       />
       <Tab.Screen
         name="HandbookTab"
         component={HandbookScreen}
-        options={{ title: 'Handbook' }}
+        options={{ title: 'Handbook', headerShown: false }}
       />
       <Tab.Screen
         name="SearchTab"
@@ -234,7 +234,7 @@ const AdminTabs = () => {
       <Tab.Screen
         name="AdminDashboard"
         component={AdminDashboardScreen}
-        options={{ title: 'Dashboard' }}
+        options={{ title: 'Dashboard', headerShown: false }}
       />
       <Tab.Screen
         name="AdminHandbook"

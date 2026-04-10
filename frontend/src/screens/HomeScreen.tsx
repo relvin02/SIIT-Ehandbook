@@ -111,40 +111,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Emergency Alert Banners */}
-        {emergencyAlerts.length > 0 && emergencyAlerts.map((alert: any) => {
-          const colors: Record<string, { bg: string; border: string }> = {
-            critical: { bg: '#FFEBEE', border: '#D32F2F' },
-            warning: { bg: '#FFF3E0', border: '#F57C00' },
-            info: { bg: '#E3F2FD', border: '#1976D2' },
-          };
-          const c = colors[alert.severity] || colors.critical;
-          const emoji = alert.severity === 'critical' ? '🚨' : alert.severity === 'warning' ? '⚠️' : 'ℹ️';
-          return (
-            <View key={alert.id} style={{
-              backgroundColor: c.bg,
-              borderLeftWidth: 4,
-              borderLeftColor: c.border,
-              marginHorizontal: 12,
-              marginTop: 10,
-              borderRadius: 10,
-              padding: 14,
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              gap: 10,
-            }}>
-              <Text style={{ fontSize: 22 }}>{emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.border }}>{alert.title}</Text>
-                <Text style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{alert.message}</Text>
-                <Text style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
-                  {new Date(alert.createdAt).toLocaleString()}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity
@@ -171,6 +137,40 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Text style={[styles.quickActionText, { color: theme.primary }]}>Bookmarks</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Emergency Alert Banners */}
+        {emergencyAlerts.length > 0 && emergencyAlerts.map((alert: any) => {
+          const colors: Record<string, { bg: string; border: string }> = {
+            critical: { bg: '#FFEBEE', border: '#D32F2F' },
+            warning: { bg: '#FFF3E0', border: '#F57C00' },
+            info: { bg: '#E3F2FD', border: '#1976D2' },
+          };
+          const c = colors[alert.severity] || colors.critical;
+          const emoji = alert.severity === 'critical' ? '🚨' : alert.severity === 'warning' ? '⚠️' : 'ℹ️';
+          return (
+            <View key={alert.id} style={{
+              backgroundColor: c.bg,
+              borderLeftWidth: 4,
+              borderLeftColor: c.border,
+              marginHorizontal: 12,
+              marginBottom: 10,
+              borderRadius: 10,
+              padding: 14,
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}>
+              <Text style={{ fontSize: 22 }}>{emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.border }}>{alert.title}</Text>
+                <Text style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{alert.message}</Text>
+                <Text style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+                  {new Date(alert.createdAt).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
 
         {/* Latest Announcements */}
         <View style={styles.section}>
