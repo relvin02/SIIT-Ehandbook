@@ -624,12 +624,12 @@ const styles = StyleSheet.create({
   pinArrow: {
     width: 0,
     height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderTopWidth: 14,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 18,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    marginTop: -3,
+    marginTop: -5,
   },
   // Cluster inner
   clusterInner: {
