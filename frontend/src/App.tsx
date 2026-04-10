@@ -3,9 +3,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider as ReduxProvider, useSelector, useDispatch } from 'react-redux';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
@@ -41,6 +42,29 @@ import { ThemeProvider, useTheme } from './config/ThemeContext';
 import { authService } from './services/apiClient';
 import locationService from './services/locationService';
 import { startBackgroundLocation, stopBackgroundLocation } from './services/backgroundLocation';
+import { registerForPushNotificationsAsync } from './services/notificationsService';
+
+// Set up notification handler (foreground notifications)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+// Create Android notification channel at startup (before any notification arrives)
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'Default',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#004BA8',
+    sound: 'default',
+  });
+}
 
 // Navigation
 const Stack = createNativeStackNavigator();
@@ -284,6 +308,13 @@ function AppInner() {
           dispatch(authActions.setUser(userData));
           const userRole = userData.role === 'admin' ? 'admin' : userData.role === 'faculty' ? 'faculty' : 'student';
           dispatch(authActions.setRole(userRole));
+
+          // Re-register push token on app launch (ensures fresh token after reinstall/update)
+          try {
+            await registerForPushNotificationsAsync(userData.id || userData._id, authToken);
+          } catch (notifErr) {
+            console.warn('Push notification re-registration failed:', notifErr);
+          }
 
           // Start location tracking for students only
           if (userData.role === 'student') {

@@ -1,29 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import axios from 'axios';
-import { Platform } from 'react-native';
 
 const API_URL = 'https://siit-ehandbook-api.onrender.com/api';
 
-// Show notifications even when app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
-// Android notification channel (required)
-if (Platform.OS === 'android') {
-  Notifications.setNotificationChannelAsync('default', {
-    name: 'Default',
-    importance: Notifications.AndroidImportance.MAX,
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#004BA8',
-    sound: 'default',
-  });
-}
+// NOTE: Notification handler and Android channel are set up in App.tsx at startup
 
 /**
  * Registers the device for push notifications and sends the Expo push token to the backend.

@@ -16,6 +16,7 @@ export async function sendExpoNotification(expoPushToken: string, title: string,
       title,
       body,
       data,
+      channelId: 'default',
     });
   } catch (err) {
     if (axios.isAxiosError(err)) {
