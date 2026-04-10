@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   RefreshControl,
   Image,
+  FlatList,
 } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -38,6 +39,8 @@ const StudentLocationsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [selectedStudent, setSelectedStudent] = useState<StudentLocation | null>(null);
+  const [clusterStudents, setClusterStudents] = useState<StudentLocation[]>([]);
+  const [showClusterModal, setShowClusterModal] = useState(false);
   const [mapRegion, setMapRegion] = useState({
     latitude: 14.5995,
     longitude: 120.9842,
@@ -45,6 +48,35 @@ const StudentLocationsScreen: React.FC = () => {
     longitudeDelta: 0.0421,
   });
   const [error, setError] = useState<string | null>(null);
+
+  // Cluster nearby students (within ~50m of each other)
+  const CLUSTER_DISTANCE = 0.0005; // roughly 50 meters
+  const clusteredMarkers = useMemo(() => {
+    const clusters: { center: { latitude: number; longitude: number }; students: StudentLocation[] }[] = [];
+    const assigned = new Set<string>();
+
+    for (const student of students) {
+      if (assigned.has(student.id) || !student.location) continue;
+
+      const cluster: StudentLocation[] = [student];
+      assigned.add(student.id);
+
+      for (const other of students) {
+        if (assigned.has(other.id) || !other.location) continue;
+        const dLat = Math.abs(student.location.latitude - other.location.latitude);
+        const dLng = Math.abs(student.location.longitude - other.location.longitude);
+        if (dLat < CLUSTER_DISTANCE && dLng < CLUSTER_DISTANCE) {
+          cluster.push(other);
+          assigned.add(other.id);
+        }
+      }
+
+      const avgLat = cluster.reduce((s, st) => s + st.location.latitude, 0) / cluster.length;
+      const avgLng = cluster.reduce((s, st) => s + st.location.longitude, 0) / cluster.length;
+      clusters.push({ center: { latitude: avgLat, longitude: avgLng }, students: cluster });
+    }
+    return clusters;
+  }, [students]);
 
   useEffect(() => {
     fetchStudentLocations();
@@ -198,16 +230,40 @@ const StudentLocationsScreen: React.FC = () => {
           initialRegion={mapRegion}
           mapType="satellite"
         >
-          {students.map((student) => {
-            // Validate coordinates before rendering marker
-            if (
-              !student.location ||
-              !isFinite(student.location.latitude) ||
-              !isFinite(student.location.longitude)
-            ) {
+          {clusteredMarkers.map((cluster, index) => {
+            const isCluster = cluster.students.length > 1;
+            const student = cluster.students[0];
+
+            if (isCluster) {
+              // Cluster marker — numbered badge
+              return (
+                <Marker
+                  key={`cluster-${index}`}
+                  coordinate={cluster.center}
+                  onPress={() => {
+                    setClusterStudents(cluster.students);
+                    setShowClusterModal(true);
+                  }}
+                >
+                  <View style={styles.clusterContainer}>
+                    <View style={styles.clusterPin}>
+                      <View style={styles.clusterBadge}>
+                        <Text style={styles.clusterCount}>{cluster.students.length}</Text>
+                      </View>
+                      <MaterialCommunityIcons name="account-group" size={18} color="#fff" />
+                    </View>
+                    <View style={styles.pinStick} />
+                    <View style={styles.pinShadow} />
+                  </View>
+                </Marker>
+              );
+            }
+
+            // Single student — standing pin with avatar
+            if (!student.location || !isFinite(student.location.latitude) || !isFinite(student.location.longitude)) {
               return null;
             }
-            
+
             return (
               <Marker
                 key={student.id}
@@ -217,21 +273,21 @@ const StudentLocationsScreen: React.FC = () => {
                 }}
                 onPress={() => setSelectedStudent(student)}
               >
-                {/* Custom Avatar Marker */}
-                <View style={styles.markerContainer}>
+                <View style={styles.pinContainer}>
                   <View style={[
-                    styles.markerBubble,
+                    styles.pinHead,
                     { borderColor: student.isOnline ? '#4CAF50' : '#FF9800' },
                   ]}>
                     {student.avatar ? (
-                      <Image source={{ uri: student.avatar }} style={styles.markerAvatar} />
+                      <Image source={{ uri: student.avatar }} style={styles.pinAvatar} />
                     ) : (
-                      <View style={[styles.markerAvatarPlaceholder, { backgroundColor: student.isOnline ? '#4CAF50' : '#FF9800' }]}>
-                        <MaterialCommunityIcons name="account" size={20} color="#fff" />
+                      <View style={[styles.pinAvatarPlaceholder, { backgroundColor: student.isOnline ? '#4CAF50' : '#FF9800' }]}>
+                        <MaterialCommunityIcons name="account" size={22} color="#fff" />
                       </View>
                     )}
                   </View>
-                  <View style={[styles.markerArrow, { borderTopColor: student.isOnline ? '#4CAF50' : '#FF9800' }]} />
+                  <View style={[styles.pinStick, { backgroundColor: student.isOnline ? '#4CAF50' : '#FF9800' }]} />
+                  <View style={styles.pinShadow} />
                 </View>
                 <Callout tooltip>
                   <View style={styles.calloutContainer}>
@@ -311,6 +367,69 @@ const StudentLocationsScreen: React.FC = () => {
           )}
         </ScrollView>
       )}
+
+      {/* Cluster Students Modal */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={showClusterModal}
+        onRequestClose={() => setShowClusterModal(false)}
+      >
+        <View style={styles.clusterModalOverlay}>
+          <View style={styles.clusterModalContent}>
+            <View style={styles.clusterModalHeader}>
+              <View style={styles.clusterModalHeaderLeft}>
+                <MaterialCommunityIcons name="map-marker-multiple" size={24} color="#004BA8" />
+                <Text style={styles.clusterModalTitle}>
+                  {clusterStudents.length} Students at this location
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowClusterModal(false)}>
+                <MaterialCommunityIcons name="close-circle" size={28} color="#999" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={clusterStudents}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.clusterStudentRow}
+                  onPress={() => {
+                    setShowClusterModal(false);
+                    setSelectedStudent(item);
+                  }}
+                >
+                  {item.avatar ? (
+                    <Image source={{ uri: item.avatar }} style={styles.clusterAvatar} />
+                  ) : (
+                    <View style={[styles.clusterAvatarPlaceholder, { backgroundColor: item.isOnline ? '#4CAF50' : '#FF9800' }]}>
+                      <MaterialCommunityIcons name="account" size={22} color="#fff" />
+                    </View>
+                  )}
+                  <View style={styles.clusterStudentInfo}>
+                    <Text style={styles.clusterStudentName}>{item.name}</Text>
+                    <Text style={styles.clusterStudentId}>ID: {item.studentId}</Text>
+                  </View>
+                  <View style={[
+                    styles.statusBadge,
+                    item.isOnline ? styles.statusOnline : styles.statusOffline,
+                  ]}>
+                    <MaterialCommunityIcons
+                      name={item.isOnline ? 'circle' : 'circle-outline'}
+                      size={8}
+                      color="#fff"
+                    />
+                    <Text style={styles.statusText}>
+                      {item.isOnline ? 'Active' : 'Inactive'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.clusterSeparator} />}
+            />
+          </View>
+        </View>
+      </Modal>
 
       {/* Student Detail Modal */}
       {selectedStudent && (
@@ -477,43 +596,163 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  markerContainer: {
+  // Standing pin marker (single student)
+  pinContainer: {
     alignItems: 'center',
+    width: 52,
+    height: 70,
   },
-  markerBubble: {
+  pinHead: {
     width: 44,
     height: 44,
     borderRadius: 22,
     borderWidth: 3,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    elevation: 5,
+    elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
+    shadowRadius: 4,
+    zIndex: 2,
   },
-  markerAvatar: {
+  pinAvatar: {
     width: '100%',
     height: '100%',
     borderRadius: 20,
   },
-  markerAvatarPlaceholder: {
+  pinAvatarPlaceholder: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  markerArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#4CAF50',
+  pinStick: {
+    width: 3,
+    height: 14,
+    backgroundColor: '#4CAF50',
     marginTop: -1,
+    zIndex: 1,
+  },
+  pinShadow: {
+    width: 10,
+    height: 4,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    marginTop: 1,
+  },
+  // Cluster marker
+  clusterContainer: {
+    alignItems: 'center',
+    width: 56,
+    height: 72,
+  },
+  clusterPin: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#004BA8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    borderWidth: 3,
+    borderColor: '#fff',
+    zIndex: 2,
+  },
+  clusterBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#FF5252',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#fff',
+    zIndex: 3,
+  },
+  clusterCount: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  // Cluster modal
+  clusterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  clusterModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%',
+    paddingBottom: 20,
+  },
+  clusterModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  clusterModalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  clusterModalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 8,
+  },
+  clusterStudentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  clusterAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    marginRight: 12,
+  },
+  clusterAvatarPlaceholder: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  clusterStudentInfo: {
+    flex: 1,
+  },
+  clusterStudentName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  clusterStudentId: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  clusterSeparator: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginLeft: 70,
   },
   calloutContainer: {
     backgroundColor: '#fff',
