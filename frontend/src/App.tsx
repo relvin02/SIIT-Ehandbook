@@ -259,7 +259,7 @@ const AdminTabs = () => {
       <Tab.Screen
         name="AdminDashboard"
         component={AdminDashboardScreen}
-        options={{ title: 'Dashboard', headerShown: false }}
+        options={{ title: 'Dashboard' }}
       />
       <Tab.Screen
         name="AdminHandbook"
