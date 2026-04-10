@@ -235,7 +235,6 @@ const StudentLocationsScreen: React.FC = () => {
             const student = cluster.students[0];
 
             if (isCluster) {
-              // Cluster marker — teardrop pin with count
               return (
                 <Marker
                   key={`cluster-${index}`}
@@ -245,23 +244,24 @@ const StudentLocationsScreen: React.FC = () => {
                     setShowClusterModal(true);
                   }}
                 >
-                  <View style={styles.pinContainer}>
-                    <View style={[styles.pinTeardrop, { backgroundColor: '#004BA8' }]}>
-                      <View style={styles.clusterBadge}>
+                  <View style={styles.pinWrapper}>
+                    <View style={[styles.pinOuter, { backgroundColor: '#004BA8' }]}>
+                      <View style={styles.clusterInner}>
                         <Text style={styles.clusterCount}>{cluster.students.length}</Text>
+                        <MaterialCommunityIcons name="account-group" size={14} color="#fff" />
                       </View>
-                      <MaterialCommunityIcons name="account-group" size={18} color="#fff" />
                     </View>
-                    <View style={[styles.pinPoint, { borderTopColor: '#004BA8' }]} />
+                    <View style={[styles.pinArrow, { borderTopColor: '#004BA8' }]} />
                   </View>
                 </Marker>
               );
             }
 
-            // Single student — standing pin with avatar
             if (!student.location || !isFinite(student.location.latitude) || !isFinite(student.location.longitude)) {
               return null;
             }
+
+            const pinColor = student.isOnline ? '#004BA8' : '#FF9800';
 
             return (
               <Marker
@@ -272,22 +272,19 @@ const StudentLocationsScreen: React.FC = () => {
                 }}
                 onPress={() => setSelectedStudent(student)}
               >
-                <View style={styles.pinContainer}>
-                  {/* Teardrop pin body */}
-                  <View style={[styles.pinTeardrop, { backgroundColor: student.isOnline ? '#004BA8' : '#FF9800' }]}>
-                    {/* Avatar circle */}
-                    <View style={styles.pinAvatarWrapper}>
+                <View style={styles.pinWrapper}>
+                  <View style={[styles.pinOuter, { backgroundColor: pinColor }]}>
+                    <View style={styles.pinAvatarRing}>
                       {student.avatar ? (
                         <Image source={{ uri: student.avatar }} style={styles.pinAvatar} />
                       ) : (
-                        <View style={[styles.pinAvatarPlaceholder, { backgroundColor: student.isOnline ? '#003380' : '#E65100' }]}>
-                          <MaterialCommunityIcons name="account" size={20} color="#fff" />
+                        <View style={[styles.pinAvatarFallback, { backgroundColor: pinColor }]}>
+                          <MaterialCommunityIcons name="account" size={22} color="#fff" />
                         </View>
                       )}
                     </View>
                   </View>
-                  {/* Teardrop point */}
-                  <View style={[styles.pinPoint, { borderTopColor: student.isOnline ? '#004BA8' : '#FF9800' }]} />
+                  <View style={[styles.pinArrow, { borderTopColor: pinColor }]} />
                 </View>
               </Marker>
             );
@@ -587,81 +584,63 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  // Google Maps-style teardrop pin marker
-  pinContainer: {
+  // Map pin styles - circle on top + triangle arrow below
+  pinWrapper: {
     alignItems: 'center',
-    width: 50,
-    height: 62,
   },
-  pinTeardrop: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderTopLeftRadius: 23,
-    borderTopRightRadius: 23,
-    borderBottomLeftRadius: 23,
-    borderBottomRightRadius: 4,
-    transform: [{ rotate: '45deg' }],
+  pinOuter: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
+    borderWidth: 3,
+    borderColor: '#fff',
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 4,
-    borderWidth: 2.5,
-    borderColor: '#fff',
   },
-  pinAvatarWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  pinAvatarRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     overflow: 'hidden',
-    transform: [{ rotate: '-45deg' }],
     backgroundColor: '#fff',
   },
   pinAvatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
-  pinAvatarPlaceholder: {
-    width: '100%',
-    height: '100%',
+  pinAvatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pinPoint: {
+  pinArrow: {
     width: 0,
     height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 10,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderTopWidth: 14,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    marginTop: -6,
+    marginTop: -3,
   },
-  // Cluster badge
-  clusterBadge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#FF5252',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
+  // Cluster inner
+  clusterInner: {
     alignItems: 'center',
-    paddingHorizontal: 4,
-    borderWidth: 2,
-    borderColor: '#fff',
-    zIndex: 3,
-    transform: [{ rotate: '-45deg' }],
+    justifyContent: 'center',
   },
   clusterCount: {
     color: '#fff',
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 'bold',
+    marginBottom: -2,
   },
   // Cluster modal
   clusterModalOverlay: {
