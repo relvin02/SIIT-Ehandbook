@@ -23,6 +23,7 @@ import { authActions } from '../store';
 import { RootState } from '../store';
 import locationService from '../services/locationService';
 import { useTheme } from '../config/ThemeContext';
+import { disconnectSocket } from '../services/socketService';
 
 type ProfileScreenProps = {
   navigation: any;
@@ -193,6 +194,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setShowLogoutModal(false);
     await AsyncStorage.removeItem('authToken');
     await AsyncStorage.removeItem('userRole');
+    disconnectSocket();
     dispatch(authActions.logout());
     navigation.reset({
       index: 0,

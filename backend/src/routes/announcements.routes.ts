@@ -168,6 +168,8 @@ router.put('/:id', authenticate, authorize(['admin']), async (req: AuthRequest, 
       return;
     }
 
+    io.emit('announcement_updated', { announcement });
+
     res.json({
       success: true,
       message: 'Announcement updated',
@@ -199,6 +201,8 @@ router.delete('/:id', authenticate, authorize(['admin']), async (req: AuthReques
       });
       return;
     }
+
+    io.emit('announcement_deleted', { announcementId: req.params.id });
 
     res.json({
       success: true,

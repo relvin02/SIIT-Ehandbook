@@ -172,6 +172,8 @@ router.delete('/:id', authenticate, authorize(['admin']), async (req: express.Re
       return;
     }
 
+    io.emit('emergency_alert_deleted', { alertId: req.params.id });
+
     res.json({ success: true, message: 'Alert deleted' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

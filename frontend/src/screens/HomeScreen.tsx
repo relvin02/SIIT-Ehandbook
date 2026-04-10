@@ -11,17 +11,21 @@ import {
   Image,
   Dimensions,
   Modal,
+  AppState,
 } from 'react-native';
 
 const seahawksLogo = require('../assets/seahawks.png');
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
+import * as Notifications from 'expo-notifications';
 import { announcementsService, mediaService, emergencyAlertService } from '../services/apiClient';
 import { announcementsActions } from '../store';
 import { RootState } from '../store';
 import { Announcement } from '../types';
 import { useTheme } from '../config/ThemeContext';
+import { getSocket } from '../services/socketService';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -41,6 +45,69 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     fetchAnnouncements();
     fetchVideos();
     fetchEmergencyAlerts();
+  }, []);
+
+  // Auto-refresh when Home tab is focused (switching tabs, coming back)
+  useFocusEffect(
+    useCallback(() => {
+      fetchAnnouncements();
+      fetchVideos();
+      fetchEmergencyAlerts();
+    }, [])
+  );
+
+  // Auto-refresh when a push notification is received while app is open
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(() => {
+      fetchAnnouncements();
+      fetchEmergencyAlerts();
+    });
+    return () => subscription.remove();
+  }, []);
+
+  // Auto-refresh when app comes back from background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        fetchAnnouncements();
+        fetchVideos();
+        fetchEmergencyAlerts();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  // Real-time updates via Socket.IO
+  useEffect(() => {
+    const socket = getSocket();
+
+    socket.on('announcement_created', () => {
+      fetchAnnouncements();
+    });
+    socket.on('announcement_updated', () => {
+      fetchAnnouncements();
+    });
+    socket.on('announcement_deleted', () => {
+      fetchAnnouncements();
+    });
+    socket.on('emergency_alert', () => {
+      fetchEmergencyAlerts();
+    });
+    socket.on('emergency_alert_dismissed', () => {
+      fetchEmergencyAlerts();
+    });
+    socket.on('emergency_alert_deleted', () => {
+      fetchEmergencyAlerts();
+    });
+
+    return () => {
+      socket.off('announcement_created');
+      socket.off('announcement_updated');
+      socket.off('announcement_deleted');
+      socket.off('emergency_alert');
+      socket.off('emergency_alert_dismissed');
+      socket.off('emergency_alert_deleted');
+    };
   }, []);
 
   const fetchEmergencyAlerts = async () => {

@@ -43,6 +43,7 @@ import { authService } from './services/apiClient';
 import locationService from './services/locationService';
 import { startBackgroundLocation, stopBackgroundLocation } from './services/backgroundLocation';
 import { registerForPushNotificationsAsync } from './services/notificationsService';
+import { getSocket, disconnectSocket } from './services/socketService';
 
 // Set up notification handler (foreground notifications)
 Notifications.setNotificationHandler({
@@ -315,6 +316,9 @@ function AppInner() {
           } catch (notifErr) {
             console.warn('Push notification re-registration failed:', notifErr);
           }
+
+          // Connect to Socket.IO for real-time updates
+          getSocket();
 
           // Start location tracking for students only
           if (userData.role === 'student') {

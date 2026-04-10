@@ -22,6 +22,7 @@ import { authActions } from '../store';
 import { registerForPushNotificationsAsync } from '../services/notificationsService';
 import locationService from '../services/locationService';
 import { startBackgroundLocation } from '../services/backgroundLocation';
+import { getSocket } from '../services/socketService';
 
 const showAlert = (title: string, msg: string) => {
   if (Platform.OS === 'web') {
@@ -70,6 +71,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         } catch (notifErr) {
           console.warn('Push notification registration failed:', notifErr);
         }
+
+        // Connect to Socket.IO for real-time updates
+        getSocket();
 
         // Start location tracking for students
         if (response.data.user.role === 'student') {
