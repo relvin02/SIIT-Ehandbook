@@ -228,7 +228,7 @@ const StudentLocationsScreen: React.FC = () => {
         <MapView
           style={styles.map}
           initialRegion={mapRegion}
-          mapType="satellite"
+          mapType="hybrid"
         >
           {clusteredMarkers.map((cluster, index) => {
             const isCluster = cluster.students.length > 1;
