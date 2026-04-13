@@ -28,12 +28,12 @@ router.get('/:department', authenticate, async (req: AuthRequest, res: express.R
  * Create or update department info (admin only)
  * PUT /api/department-info/:department
  */
-router.put('/:department', authenticate, authorize('admin'), async (req: AuthRequest, res: express.Response) => {
+router.put('/:department', authenticate, authorize(['admin']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { department } = req.params;
     const { vision, mission, goals, objectives, policies, policiesLabel } = req.body;
 
-    const updateData: any = { updatedBy: req.userId, updatedAt: new Date() };
+    const updateData: any = { updatedBy: req.user?.id, updatedAt: new Date() };
     if (vision !== undefined) updateData.vision = vision;
     if (mission !== undefined) updateData.mission = mission;
     if (goals !== undefined) updateData.goals = goals;
