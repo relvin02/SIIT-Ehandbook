@@ -50,7 +50,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
 
 const ROLE_LABELS: Record<UserRole, string> = {
   student: 'Student',
-  faculty: 'Faculty',
+  faculty: 'Faculty/Staff',
   admin: 'Admin',
 };
 
@@ -352,7 +352,7 @@ const ManageUsersScreen: React.FC = () => {
           return;
         }
 
-        showAlert('confirm', 'Import Faculty', `Import ${faculty.length} faculty from CSV?\n\nFaculty without a password will use "faculty123" as default password.`, async () => {
+        showAlert('confirm', 'Import Faculty/Staff', `Import ${faculty.length} faculty/staff from CSV?\n\nFaculty/Staff without a password will use "faculty123" as default password.`, async () => {
           setImporting(true);
           try {
             const res = await userManagementService.bulkImportFaculty(faculty);
@@ -848,7 +848,7 @@ const ManageUsersScreen: React.FC = () => {
             >
               <MaterialCommunityIcons name="school" size={24} color="#7B1FA2" />
               <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.importPickerLabel}>Faculty</Text>
+                <Text style={styles.importPickerLabel}>Faculty/Staff</Text>
                 <Text style={styles.importPickerDesc}>CSV: Name, Email, Password</Text>
               </View>
               <MaterialCommunityIcons name="chevron-right" size={22} color="#999" />
