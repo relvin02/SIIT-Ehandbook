@@ -70,6 +70,7 @@ const ManageUsersScreen: React.FC = () => {
   const [resetUser, setResetUser] = useState<UserAccount | null>(null);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleDept = (dept: string) => {
     setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
@@ -125,9 +126,19 @@ const ManageUsersScreen: React.FC = () => {
     }
   };
 
-  const filteredUsers = activeTab === 'all'
+  const filteredUsers = (activeTab === 'all'
     ? users
-    : users.filter(u => u.role === activeTab);
+    : users.filter(u => u.role === activeTab)
+  ).filter(u => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      u.name.toLowerCase().includes(q) ||
+      (u.studentId && u.studentId.toLowerCase().includes(q)) ||
+      (u.email && u.email.toLowerCase().includes(q)) ||
+      (u.department && u.department.toLowerCase().includes(q))
+    );
+  });
 
   // Group students by department when student tab is active
   const groupedByDept = activeTab === 'student'
@@ -358,6 +369,24 @@ const ManageUsersScreen: React.FC = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={20} color="#999" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, ID, email, or department..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <MaterialCommunityIcons name="close-circle" size={18} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Action Buttons */}
         <View style={styles.actionRow}>
@@ -805,6 +834,25 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 15,
+    marginBottom: 12,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8,
+    paddingVertical: 0,
+  },
   tabsRow: {
     paddingHorizontal: 15,
     marginBottom: 12,
