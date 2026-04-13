@@ -223,6 +223,81 @@ router.post('/users', authenticate, authorize(['admin']), async (req: express.Re
 });
 
 /**
+ * Bulk import students (Admin only)
+ * POST /api/auth/users/bulk
+ * Body: { students: [{ name, studentId, department, password? }] }
+ */
+router.post('/users/bulk', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { students } = req.body;
+    if (!Array.isArray(students) || students.length === 0) {
+      res.status(400).json({ success: false, message: 'No students provided' });
+      return;
+    }
+
+    if (students.length > 200) {
+      res.status(400).json({ success: false, message: 'Maximum 200 students per import' });
+      return;
+    }
+
+    const results: { success: any[]; failed: any[] } = { success: [], failed: [] };
+
+    for (const student of students) {
+      try {
+        const { name, studentId, department, password } = student;
+        if (!name || !studentId) {
+          results.failed.push({ studentId: studentId || '?', name: name || '?', reason: 'Name and Student ID are required' });
+          continue;
+        }
+
+        const validDepts = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'];
+        if (department && !validDepts.includes(department)) {
+          results.failed.push({ studentId, name, reason: `Invalid department: ${department}` });
+          continue;
+        }
+
+        // Check duplicates
+        const existingById = await User.findOne({ studentId });
+        if (existingById) {
+          results.failed.push({ studentId, name, reason: 'Student ID already exists' });
+          continue;
+        }
+
+        const userEmail = `${studentId.toLowerCase()}@siit.edu`;
+        const existingByEmail = await User.findOne({ email: userEmail });
+        if (existingByEmail) {
+          results.failed.push({ studentId, name, reason: 'Email already exists' });
+          continue;
+        }
+
+        const pw = password || studentId;
+        const password_hash = await bcrypt.hash(pw, 10);
+        const user = new User({
+          email: userEmail,
+          password_hash,
+          name,
+          studentId,
+          role: 'student',
+          department: department || null,
+        });
+        await user.save();
+        results.success.push({ id: user._id, name: user.name, studentId: user.studentId, department: user.department });
+      } catch (err: any) {
+        results.failed.push({ studentId: student.studentId || '?', name: student.name || '?', reason: err.message });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Imported ${results.success.length} students, ${results.failed.length} failed`,
+      data: results,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * Update user account (Admin only)
  */
 router.put('/users/:id', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {

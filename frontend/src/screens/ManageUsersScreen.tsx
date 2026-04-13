@@ -11,8 +11,11 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import { userManagementService } from '../services/apiClient';
 
 type AlertType = 'success' | 'error' | 'confirm';
@@ -80,6 +83,8 @@ const ManageUsersScreen: React.FC = () => {
 
   // Reset password form
   const [resetPassword, setResetPasswordVal] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: any[]; failed: any[] } | null>(null);
 
   // Custom alert modal
   const [alertState, setAlertState] = useState<AlertState>({
@@ -225,6 +230,71 @@ const ManageUsersScreen: React.FC = () => {
     }
   };
 
+  const handleImportCSV = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'application/vnd.ms-excel', 'text/*'],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const file = result.assets[0];
+      const content = await FileSystem.readAsStringAsync(file.uri);
+      const lines = content.split(/\r?\n/).filter(line => line.trim());
+
+      if (lines.length < 2) {
+        showAlert('error', 'Error', 'CSV file must have a header row and at least one data row');
+        return;
+      }
+
+      // Parse header
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const nameIdx = header.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname');
+      const idIdx = header.findIndex(h => h === 'studentid' || h === 'student id' || h === 'id' || h === 'student_id');
+      const deptIdx = header.findIndex(h => h === 'department' || h === 'dept' || h === 'program' || h === 'course');
+      const pwIdx = header.findIndex(h => h === 'password' || h === 'pw');
+
+      if (nameIdx === -1 || idIdx === -1) {
+        showAlert('error', 'Error', 'CSV must have "Name" and "Student ID" columns.\n\nExpected format:\nName, Student ID, Department, Password');
+        return;
+      }
+
+      const students: { name: string; studentId: string; department?: string; password?: string }[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const name = cols[nameIdx]?.trim();
+        const studentId = cols[idIdx]?.trim();
+        if (!name || !studentId) continue;
+
+        const student: any = { name, studentId };
+        if (deptIdx !== -1 && cols[deptIdx]?.trim()) student.department = cols[deptIdx].trim();
+        if (pwIdx !== -1 && cols[pwIdx]?.trim()) student.password = cols[pwIdx].trim();
+        students.push(student);
+      }
+
+      if (students.length === 0) {
+        showAlert('error', 'Error', 'No valid student rows found in CSV');
+        return;
+      }
+
+      showAlert('confirm', 'Import Students', `Import ${students.length} students from CSV?\n\nStudents without a password will use their Student ID as default password.`, async () => {
+        setImporting(true);
+        try {
+          const res = await userManagementService.bulkImport(students);
+          setImportResult(res.data);
+          fetchUsers();
+        } catch (error: any) {
+          showAlert('error', 'Error', error.response?.data?.message || 'Import failed');
+        } finally {
+          setImporting(false);
+        }
+      });
+    } catch (error: any) {
+      showAlert('error', 'Error', 'Failed to read file');
+    }
+  };
+
   const getCounts = () => {
     const counts: Record<string, number> = { all: users.length };
     users.forEach(u => { counts[u.role] = (counts[u.role] || 0) + 1; });
@@ -266,14 +336,30 @@ const ManageUsersScreen: React.FC = () => {
           ))}
         </ScrollView>
 
-        {/* Add Button */}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => { setShowAddForm(!showAddForm); if (showAddForm) resetAddForm(); }}
-        >
-          <MaterialCommunityIcons name={showAddForm ? 'close' : 'plus'} size={20} color="#fff" />
-          <Text style={styles.addButtonText}>{showAddForm ? 'Cancel' : 'Add Account'}</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.addButton, { flex: 1 }]}
+            onPress={() => { setShowAddForm(!showAddForm); if (showAddForm) resetAddForm(); }}
+          >
+            <MaterialCommunityIcons name={showAddForm ? 'close' : 'plus'} size={20} color="#fff" />
+            <Text style={styles.addButtonText}>{showAddForm ? 'Cancel' : 'Add Account'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.importButton, importing && { opacity: 0.6 }]}
+            onPress={handleImportCSV}
+            disabled={importing}
+          >
+            {importing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <MaterialCommunityIcons name="file-import" size={20} color="#fff" />
+                <Text style={styles.importButtonText}>Import CSV</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* Add Form */}
         {showAddForm && (
@@ -578,6 +664,41 @@ const ManageUsersScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Import Result Modal */}
+      {importResult && (
+        <Modal transparent animationType="fade" visible={true}>
+          <View style={styles.sweetOverlay}>
+            <View style={styles.sweetCard}>
+              <MaterialCommunityIcons
+                name={importResult.failed.length === 0 ? 'check-circle' : 'alert-circle'}
+                size={48}
+                color={importResult.failed.length === 0 ? '#4CAF50' : '#FF9800'}
+              />
+              <Text style={styles.sweetTitle}>Import Results</Text>
+              <Text style={styles.sweetMessage}>
+                {`✅ ${importResult.success.length} imported successfully`}
+                {importResult.failed.length > 0 && `\n❌ ${importResult.failed.length} failed`}
+              </Text>
+              {importResult.failed.length > 0 && (
+                <ScrollView style={{ maxHeight: 150, width: '100%', marginTop: 8 }}>
+                  {importResult.failed.map((f: any, i: number) => (
+                    <Text key={i} style={{ fontSize: 12, color: '#D32F2F', marginBottom: 4 }}>
+                      • {f.studentId} ({f.name}): {f.reason}
+                    </Text>
+                  ))}
+                </ScrollView>
+              )}
+              <TouchableOpacity
+                style={[styles.sweetConfirmBtn, { backgroundColor: '#4CAF50' }]}
+                onPress={() => setImportResult(null)}
+              >
+                <Text style={styles.sweetConfirmText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -620,13 +741,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 15,
-    marginBottom: 15,
     backgroundColor: '#004BA8',
     borderRadius: 8,
     paddingVertical: 12,
   },
   addButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14, marginLeft: 8 },
+  actionRow: {
+    flexDirection: 'row',
+    marginHorizontal: 15,
+    marginBottom: 15,
+    gap: 10,
+  },
+  importButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2E7D32',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  importButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14, marginLeft: 8 },
   formCard: {
     backgroundColor: '#fff',
     marginHorizontal: 15,

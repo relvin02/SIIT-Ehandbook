@@ -250,6 +250,11 @@ export const userManagementService = {
     const response = await apiClient.post(`/auth/users/${id}/reset-password`, { password });
     return response.data;
   },
+
+  async bulkImport(students: { name: string; studentId: string; department?: string; password?: string }[]) {
+    const response = await apiClient.post('/auth/users/bulk', { students });
+    return response.data;
+  },
 };
 
 /**
