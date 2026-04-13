@@ -69,6 +69,11 @@ const ManageUsersScreen: React.FC = () => {
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const [resetUser, setResetUser] = useState<UserAccount | null>(null);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
+
+  const toggleDept = (dept: string) => {
+    setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
+  };
 
   // Add form
   const [addName, setAddName] = useState('');
@@ -478,14 +483,20 @@ const ManageUsersScreen: React.FC = () => {
           // Students grouped by department
           sortedDepts.map(dept => (
             <View key={dept}>
-              <View style={styles.deptSectionHeader}>
+              <TouchableOpacity style={styles.deptSectionHeader} onPress={() => toggleDept(dept)} activeOpacity={0.7}>
                 <MaterialCommunityIcons name="school" size={18} color="#004BA8" />
                 <Text style={styles.deptSectionTitle}>{dept}</Text>
                 <View style={styles.deptSectionBadge}>
                   <Text style={styles.deptSectionCount}>{groupedByDept[dept].length}</Text>
                 </View>
-              </View>
-              {groupedByDept[dept].map(user => (
+                <MaterialCommunityIcons
+                  name={expandedDepts[dept] ? 'chevron-up' : 'chevron-down'}
+                  size={22}
+                  color="#004BA8"
+                  style={{ marginLeft: 8 }}
+                />
+              </TouchableOpacity>
+              {expandedDepts[dept] && groupedByDept[dept].map(user => (
                 <View key={user.id} style={[styles.studentCard, { borderLeftColor: ROLE_COLORS[user.role] }]}>
                   <View style={styles.studentInfo}>
                     <View style={[styles.studentAvatar, { backgroundColor: ROLE_COLORS[user.role] }]}>
