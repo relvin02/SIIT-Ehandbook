@@ -255,6 +255,11 @@ export const userManagementService = {
     const response = await apiClient.post('/auth/users/bulk', { students });
     return response.data;
   },
+
+  async bulkImportFaculty(faculty: { name: string; email: string; password?: string }[]) {
+    const response = await apiClient.post('/auth/users/bulk-faculty', { faculty });
+    return response.data;
+  },
 };
 
 /**

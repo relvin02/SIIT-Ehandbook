@@ -298,6 +298,65 @@ router.post('/users/bulk', authenticate, authorize(['admin']), async (req: expre
 });
 
 /**
+ * Bulk import faculty (Admin only)
+ * POST /api/auth/users/bulk-faculty
+ * Body: { faculty: [{ name, email, password? }] }
+ */
+router.post('/users/bulk-faculty', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { faculty } = req.body;
+    if (!Array.isArray(faculty) || faculty.length === 0) {
+      res.status(400).json({ success: false, message: 'No faculty provided' });
+      return;
+    }
+
+    if (faculty.length > 200) {
+      res.status(400).json({ success: false, message: 'Maximum 200 faculty per import' });
+      return;
+    }
+
+    const results: { success: any[]; failed: any[] } = { success: [], failed: [] };
+
+    for (const member of faculty) {
+      try {
+        const { name, email, password } = member;
+        if (!name || !email) {
+          results.failed.push({ email: email || '?', name: name || '?', reason: 'Name and Email are required' });
+          continue;
+        }
+
+        const existingByEmail = await User.findOne({ email: email.toLowerCase() });
+        if (existingByEmail) {
+          results.failed.push({ email, name, reason: 'Email already exists' });
+          continue;
+        }
+
+        const pw = password || 'faculty123';
+        const password_hash = await bcrypt.hash(pw, 10);
+        const user = new User({
+          email: email.toLowerCase(),
+          password_hash,
+          name,
+          role: 'faculty',
+        });
+        await user.save();
+        results.success.push({ id: user._id, name: user.name, email: user.email });
+      } catch (err: any) {
+        results.failed.push({ email: member.email || '?', name: member.name || '?', reason: err.message });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Imported ${results.success.length} faculty, ${results.failed.length} failed`,
+      data: results,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * Update user account (Admin only)
  */
 router.put('/users/:id', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {

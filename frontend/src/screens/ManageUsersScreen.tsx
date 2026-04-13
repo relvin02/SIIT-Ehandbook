@@ -92,6 +92,7 @@ const ManageUsersScreen: React.FC = () => {
   const [resetPassword, setResetPasswordVal] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: any[]; failed: any[] } | null>(null);
+  const [showImportPicker, setShowImportPicker] = useState(false);
 
   // Custom alert modal
   const [alertState, setAlertState] = useState<AlertState>({
@@ -262,7 +263,8 @@ const ManageUsersScreen: React.FC = () => {
     }
   };
 
-  const handleImportCSV = async () => {
+  const handleImportCSV = async (importType: 'student' | 'faculty') => {
+    setShowImportPicker(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['text/csv', 'text/comma-separated-values', 'application/vnd.ms-excel', 'text/*'],
@@ -272,7 +274,6 @@ const ManageUsersScreen: React.FC = () => {
       if (result.canceled || !result.assets?.[0]) return;
 
       const file = result.assets[0];
-      // Use fetch to read file content (works with content:// URIs on Android)
       const response = await fetch(file.uri);
       const content = await response.text();
       const lines = content.split(/\r?\n/).filter(line => line.trim());
@@ -282,48 +283,88 @@ const ManageUsersScreen: React.FC = () => {
         return;
       }
 
-      // Parse header
       const header = lines[0].split(',').map(h => h.trim().toLowerCase());
       const nameIdx = header.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname');
-      const idIdx = header.findIndex(h => h === 'studentid' || h === 'student id' || h === 'id' || h === 'student_id');
-      const deptIdx = header.findIndex(h => h === 'department' || h === 'dept' || h === 'program' || h === 'course');
       const pwIdx = header.findIndex(h => h === 'password' || h === 'pw');
 
-      if (nameIdx === -1 || idIdx === -1) {
-        showAlert('error', 'Error', 'CSV must have "Name" and "Student ID" columns.\n\nExpected format:\nName, Student ID, Department, Password');
-        return;
-      }
+      if (importType === 'student') {
+        const idIdx = header.findIndex(h => h === 'studentid' || h === 'student id' || h === 'id' || h === 'student_id');
+        const deptIdx = header.findIndex(h => h === 'department' || h === 'dept' || h === 'program' || h === 'course');
 
-      const students: { name: string; studentId: string; department?: string; password?: string }[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim());
-        const name = cols[nameIdx]?.trim();
-        const studentId = cols[idIdx]?.trim();
-        if (!name || !studentId) continue;
-
-        const student: any = { name, studentId };
-        if (deptIdx !== -1 && cols[deptIdx]?.trim()) student.department = cols[deptIdx].trim();
-        if (pwIdx !== -1 && cols[pwIdx]?.trim()) student.password = cols[pwIdx].trim();
-        students.push(student);
-      }
-
-      if (students.length === 0) {
-        showAlert('error', 'Error', 'No valid student rows found in CSV');
-        return;
-      }
-
-      showAlert('confirm', 'Import Students', `Import ${students.length} students from CSV?\n\nStudents without a password will use their Student ID as default password.`, async () => {
-        setImporting(true);
-        try {
-          const res = await userManagementService.bulkImport(students);
-          setImportResult(res.data);
-          fetchUsers();
-        } catch (error: any) {
-          showAlert('error', 'Error', error.response?.data?.message || 'Import failed');
-        } finally {
-          setImporting(false);
+        if (nameIdx === -1 || idIdx === -1) {
+          showAlert('error', 'Error', 'CSV must have "Name" and "Student ID" columns.\n\nExpected format:\nName, Student ID, Department, Password');
+          return;
         }
-      }, 'Yes, Import', '#2E7D32');
+
+        const students: { name: string; studentId: string; department?: string; password?: string }[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim());
+          const name = cols[nameIdx]?.trim();
+          const studentId = cols[idIdx]?.trim();
+          if (!name || !studentId) continue;
+
+          const student: any = { name, studentId };
+          if (deptIdx !== -1 && cols[deptIdx]?.trim()) student.department = cols[deptIdx].trim();
+          if (pwIdx !== -1 && cols[pwIdx]?.trim()) student.password = cols[pwIdx].trim();
+          students.push(student);
+        }
+
+        if (students.length === 0) {
+          showAlert('error', 'Error', 'No valid student rows found in CSV');
+          return;
+        }
+
+        showAlert('confirm', 'Import Students', `Import ${students.length} students from CSV?\n\nStudents without a password will use their Student ID as default password.`, async () => {
+          setImporting(true);
+          try {
+            const res = await userManagementService.bulkImport(students);
+            setImportResult(res.data);
+            fetchUsers();
+          } catch (error: any) {
+            showAlert('error', 'Error', error.response?.data?.message || 'Import failed');
+          } finally {
+            setImporting(false);
+          }
+        }, 'Yes, Import', '#2E7D32');
+      } else {
+        // Faculty import
+        const emailIdx = header.findIndex(h => h === 'email' || h === 'e-mail' || h === 'email address');
+
+        if (nameIdx === -1 || emailIdx === -1) {
+          showAlert('error', 'Error', 'CSV must have "Name" and "Email" columns.\n\nExpected format:\nName, Email, Password');
+          return;
+        }
+
+        const faculty: { name: string; email: string; password?: string }[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim());
+          const name = cols[nameIdx]?.trim();
+          const email = cols[emailIdx]?.trim();
+          if (!name || !email) continue;
+
+          const member: any = { name, email };
+          if (pwIdx !== -1 && cols[pwIdx]?.trim()) member.password = cols[pwIdx].trim();
+          faculty.push(member);
+        }
+
+        if (faculty.length === 0) {
+          showAlert('error', 'Error', 'No valid faculty rows found in CSV');
+          return;
+        }
+
+        showAlert('confirm', 'Import Faculty', `Import ${faculty.length} faculty from CSV?\n\nFaculty without a password will use "faculty123" as default password.`, async () => {
+          setImporting(true);
+          try {
+            const res = await userManagementService.bulkImportFaculty(faculty);
+            setImportResult(res.data);
+            fetchUsers();
+          } catch (error: any) {
+            showAlert('error', 'Error', error.response?.data?.message || 'Import failed');
+          } finally {
+            setImporting(false);
+          }
+        }, 'Yes, Import', '#7B1FA2');
+      }
     } catch (error: any) {
       showAlert('error', 'Error', error?.message || 'Failed to read file');
     }
@@ -399,7 +440,7 @@ const ManageUsersScreen: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.importButton, importing && { opacity: 0.6 }]}
-            onPress={handleImportCSV}
+            onPress={() => setShowImportPicker(true)}
             disabled={importing}
           >
             {importing ? (
@@ -783,6 +824,42 @@ const ManageUsersScreen: React.FC = () => {
         </View>
       </Modal>
 
+      {/* Import Type Picker Modal */}
+      <Modal visible={showImportPicker} transparent animationType="fade" onRequestClose={() => setShowImportPicker(false)}>
+        <View style={styles.sweetOverlay}>
+          <View style={styles.sweetCard}>
+            <MaterialCommunityIcons name="file-import" size={44} color="#004BA8" />
+            <Text style={styles.sweetTitle}>Import CSV</Text>
+            <Text style={[styles.sweetMessage, { marginBottom: 16 }]}>Choose which type of accounts to import:</Text>
+            <TouchableOpacity
+              style={styles.importPickerOption}
+              onPress={() => handleImportCSV('student')}
+            >
+              <MaterialCommunityIcons name="account" size={24} color="#004BA8" />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.importPickerLabel}>Students</Text>
+                <Text style={styles.importPickerDesc}>CSV: Name, Student ID, Department, Password</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color="#999" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.importPickerOption}
+              onPress={() => handleImportCSV('faculty')}
+            >
+              <MaterialCommunityIcons name="school" size={24} color="#7B1FA2" />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.importPickerLabel}>Faculty</Text>
+                <Text style={styles.importPickerDesc}>CSV: Name, Email, Password</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color="#999" />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.sweetCancelBtn, { marginTop: 12, alignSelf: 'center' }]} onPress={() => setShowImportPicker(false)}>
+              <Text style={styles.sweetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Import Result Modal */}
       {importResult && (
         <Modal transparent animationType="fade" visible={true}>
@@ -852,6 +929,25 @@ const styles = StyleSheet.create({
     color: '#333',
     marginLeft: 8,
     paddingVertical: 0,
+  },
+  importPickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    width: '100%',
+  },
+  importPickerLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#333',
+  },
+  importPickerDesc: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
   },
   tabsRow: {
     paddingHorizontal: 15,
