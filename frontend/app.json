@@ -58,9 +58,9 @@
       }
     },
     "web": {
-      "favicon": "./assets/siitappicon.png",
-      "bundler": "metro"
+      "favicon": "./assets/siitappicon.png"
     },
+    "platforms": ["android", "ios"],
     "extra": {
       "eas": {
         "projectId": "4166f18e-2704-4acf-8485-7a67efc263ea"

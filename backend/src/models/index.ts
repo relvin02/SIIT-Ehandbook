@@ -442,3 +442,47 @@ const feedbackSchema = new mongoose.Schema({
 });
 
 export const Feedback = mongoose.model('Feedback', feedbackSchema);
+
+// Department Info Schema (vision, mission, goals, objectives, policies per department)
+const departmentInfoSchema = new mongoose.Schema({
+  department: {
+    type: String,
+    enum: ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'],
+    required: true,
+    unique: true,
+  },
+  vision: {
+    type: String,
+    default: '',
+  },
+  mission: {
+    type: String,
+    default: '',
+  },
+  goals: {
+    type: String,
+    default: '',
+  },
+  objectives: {
+    type: String,
+    default: '',
+  },
+  policies: {
+    type: String,
+    default: '',
+  },
+  policiesLabel: {
+    type: String,
+    default: 'Policies', // e.g. "Laboratory Policies" for BSIT
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const DepartmentInfo = mongoose.model('DepartmentInfo', departmentInfoSchema);

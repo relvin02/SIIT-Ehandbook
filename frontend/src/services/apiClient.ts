@@ -341,6 +341,21 @@ export const orgChartService = {
 };
 
 /**
+ * Department Info Service
+ */
+export const departmentInfoService = {
+  async get(department: string) {
+    const response = await apiClient.get(`/department-info/${encodeURIComponent(department)}`);
+    return response.data.data;
+  },
+
+  async update(department: string, data: { vision?: string; mission?: string; goals?: string; objectives?: string; policies?: string; policiesLabel?: string }) {
+    const response = await apiClient.put(`/department-info/${encodeURIComponent(department)}`, data);
+    return response.data.data;
+  },
+};
+
+/**
  * Gallery Service
  */
 export const galleryService = {

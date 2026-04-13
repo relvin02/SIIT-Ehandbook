@@ -17,7 +17,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
-import { orgChartService } from '../services/apiClient';
+import { orgChartService, departmentInfoService } from '../services/apiClient';
 
 interface OrgMember {
   _id: string;
@@ -30,11 +30,19 @@ interface OrgMember {
   department: string | null;
 }
 
-const LEVEL_LABELS: Record<number, string> = {
+const SCHOOL_LEVEL_LABELS: Record<number, string> = {
   0: 'Chairman / President',
   1: 'Board of Trustees',
   2: 'Officers / Directors',
   3: 'Department Heads',
+  4: 'Instructors',
+};
+
+const DEPT_LEVEL_LABELS: Record<number, string> = {
+  0: 'President',
+  1: 'VP Academics',
+  2: 'Dean',
+  3: 'Instructors',
 };
 
 const DEPARTMENTS = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'] as const;
@@ -47,8 +55,16 @@ const OrgChartScreen = () => {
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
-    isAdmin ? null : userDepartment
+
+  // Two tabs: 'school' (general) and 'department'
+  const [activeTab, setActiveTab] = useState<'school' | 'department'>('school');
+
+  // Pick level labels based on active tab
+  const LEVEL_LABELS = activeTab === 'school' ? SCHOOL_LEVEL_LABELS : DEPT_LEVEL_LABELS;
+
+  // For admin: which department to view/manage in the department tab
+  const [selectedDepartment, setSelectedDepartment] = useState<string>(
+    userDepartment || DEPARTMENTS[0]
   );
 
   // Add/Edit modal
@@ -62,26 +78,59 @@ const OrgChartScreen = () => {
   const [formDepartment, setFormDepartment] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Department info (vision, mission, goals, objectives, policies)
+  const [deptInfo, setDeptInfo] = useState<any>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoField, setInfoField] = useState<'vision' | 'mission' | 'goals' | 'objectives' | 'policies'>('vision');
+  const [infoValue, setInfoValue] = useState('');
+  const [savingInfo, setSavingInfo] = useState(false);
+
+  const currentDept = isAdmin ? selectedDepartment : (userDepartment || selectedDepartment);
+
+  const fetchDeptInfo = useCallback(async () => {
+    if (activeTab !== 'department') return;
+    try {
+      const data = await departmentInfoService.get(currentDept);
+      setDeptInfo(data);
+    } catch (error) {
+      console.error('Failed to fetch department info:', error);
+    }
+  }, [activeTab, currentDept]);
+
   const fetchMembers = useCallback(async () => {
     try {
-      const dept = isAdmin ? (selectedDepartment || undefined) : (userDepartment || undefined);
-      const data = await orgChartService.getAll(dept);
-      setMembers(data);
+      if (activeTab === 'school') {
+        // School org chart: no department filter (general members only)
+        const data = await orgChartService.getAll();
+        // Filter to only show members with no department (general/school-wide)
+        setMembers(data.filter((m: OrgMember) => !m.department));
+      } else {
+        // Department org chart
+        const dept = isAdmin ? selectedDepartment : (userDepartment || selectedDepartment);
+        const data = await orgChartService.getAll(dept);
+        // Filter to only show members with the selected department
+        setMembers(data.filter((m: OrgMember) => m.department === dept));
+      }
     } catch (error) {
       console.error('Failed to fetch org chart:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedDepartment, isAdmin, userDepartment]);
+  }, [activeTab, selectedDepartment, isAdmin, userDepartment]);
 
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
 
+  useEffect(() => {
+    fetchDeptInfo();
+  }, [fetchDeptInfo]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchMembers();
+    fetchDeptInfo();
   };
 
   const handlePickImage = async () => {
@@ -106,7 +155,8 @@ const OrgChartScreen = () => {
     setFormImage(null);
     setFormLevel(level);
     setFormOrder(members.filter(m => m.level === level).length);
-    setFormDepartment(selectedDepartment);
+    // School tab = null (general), Department tab = selected department
+    setFormDepartment(activeTab === 'school' ? null : selectedDepartment);
     setShowModal(true);
   };
 
@@ -158,6 +208,26 @@ const OrgChartScreen = () => {
     }
   };
 
+  const openInfoEdit = (field: 'vision' | 'mission' | 'goals' | 'objectives' | 'policies') => {
+    setInfoField(field);
+    setInfoValue(deptInfo?.[field] || '');
+    setShowInfoModal(true);
+  };
+
+  const getPoliciesLabel = () => {
+    if (deptInfo?.policiesLabel) return deptInfo.policiesLabel;
+    if (currentDept === 'BSIT') return 'Laboratory Policies';
+    return 'Policies';
+  };
+
+  const INFO_SECTIONS = [
+    { key: 'vision' as const, label: 'Vision', icon: 'eye' as const },
+    { key: 'mission' as const, label: 'Mission', icon: 'flag' as const },
+    { key: 'goals' as const, label: 'Goals', icon: 'target' as const },
+    { key: 'objectives' as const, label: 'Objectives', icon: 'format-list-checks' as const },
+    { key: 'policies' as const, label: getPoliciesLabel(), icon: 'shield-check' as const },
+  ];
+
   // Group members by level
   const groupedMembers = members.reduce<Record<number, OrgMember[]>>((acc, member) => {
     const level = member.level ?? 0;
@@ -190,24 +260,34 @@ const OrgChartScreen = () => {
           <MaterialCommunityIcons name="sitemap" size={32} color="#004BA8" />
           <Text style={styles.headerTitle}>Organizational Chart</Text>
           <Text style={styles.headerSubtitle}>
-            {selectedDepartment
-              ? `${selectedDepartment} Department`
-              : 'SIIT Board of Trustees & Officers'}
+            {activeTab === 'school'
+              ? 'SIIT Board of Trustees & Officers'
+              : `${selectedDepartment} Department`}
           </Text>
         </View>
 
-        {/* Department Filter Tabs (Admin) */}
-        {isAdmin && (
+        {/* School / Department Tab Switcher */}
+        <View style={styles.tabSwitcher}>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'school' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('school')}
+          >
+            <MaterialCommunityIcons name="school" size={16} color={activeTab === 'school' ? '#fff' : '#666'} />
+            <Text style={[styles.tabBtnText, activeTab === 'school' && styles.tabBtnTextActive]}>School</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'department' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('department')}
+          >
+            <MaterialCommunityIcons name="domain" size={16} color={activeTab === 'department' ? '#fff' : '#666'} />
+            <Text style={[styles.tabBtnText, activeTab === 'department' && styles.tabBtnTextActive]}>Department</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Department selector (visible on Department tab) */}
+        {activeTab === 'department' && isAdmin && (
           <View style={styles.deptFilterContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.deptFilterScroll}>
-              <TouchableOpacity
-                style={[styles.deptTab, !selectedDepartment && styles.deptTabActive]}
-                onPress={() => setSelectedDepartment(null)}
-              >
-                <Text style={[styles.deptTabText, !selectedDepartment && styles.deptTabTextActive]}>
-                  All / General
-                </Text>
-              </TouchableOpacity>
               {DEPARTMENTS.map(dept => (
                 <TouchableOpacity
                   key={dept}
@@ -223,8 +303,8 @@ const OrgChartScreen = () => {
           </View>
         )}
 
-        {/* Student: Show which department they see */}
-        {!isAdmin && userDepartment && (
+        {/* Student: Show their department on Department tab */}
+        {activeTab === 'department' && !isAdmin && userDepartment && (
           <View style={styles.deptBanner}>
             <MaterialCommunityIcons name="school" size={16} color="#004BA8" />
             <Text style={styles.deptBannerText}>{userDepartment} Department</Text>
@@ -316,7 +396,7 @@ const OrgChartScreen = () => {
         {/* Admin: Add new level section */}
         {isAdmin && (
           <View style={styles.addLevelSection}>
-            {[0, 1, 2, 3].filter(l => !sortedLevels.includes(l)).map(level => (
+            {Object.keys(LEVEL_LABELS).map(Number).filter(l => !sortedLevels.includes(l)).map(level => (
               <TouchableOpacity
                 key={level}
                 style={styles.addLevelBtn}
@@ -325,6 +405,36 @@ const OrgChartScreen = () => {
                 <MaterialCommunityIcons name="plus-circle" size={20} color="#004BA8" />
                 <Text style={styles.addLevelText}>Add {LEVEL_LABELS[level] || `Level ${level}`}</Text>
               </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Department Info: Vision, Mission, Goals, Objectives, Policies */}
+        {activeTab === 'department' && (
+          <View style={styles.deptInfoSection}>
+            <View style={styles.deptInfoHeader}>
+              <MaterialCommunityIcons name="information" size={20} color="#004BA8" />
+              <Text style={styles.deptInfoHeaderText}>{currentDept} Department Info</Text>
+            </View>
+
+            {INFO_SECTIONS.map(({ key, label, icon }) => (
+              <View key={key} style={styles.infoCard}>
+                <View style={styles.infoCardHeader}>
+                  <MaterialCommunityIcons name={icon} size={18} color="#004BA8" />
+                  <Text style={styles.infoCardTitle}>{label}</Text>
+                  {isAdmin && (
+                    <TouchableOpacity
+                      style={styles.infoEditBtn}
+                      onPress={() => openInfoEdit(key)}
+                    >
+                      <MaterialCommunityIcons name="pencil" size={14} color="#004BA8" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={styles.infoCardContent}>
+                  {deptInfo?.[key] || (isAdmin ? 'Tap edit to add content' : 'Not yet available')}
+                </Text>
+              </View>
             ))}
           </View>
         )}
@@ -370,8 +480,8 @@ const OrgChartScreen = () => {
                 onChangeText={setFormPosition}
               />
 
-              {/* Department Picker */}
-              {isAdmin && (
+              {/* Department Picker (only on Department tab) */}
+              {isAdmin && activeTab === 'department' && (
                 <View style={{ marginBottom: 12 }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 8 }}>
                     Department (optional — leave empty for general)
@@ -427,6 +537,79 @@ const OrgChartScreen = () => {
           </View>
         </Modal>
       )}
+
+      {/* Department Info Edit Modal */}
+      {showInfoModal && (
+        <Modal transparent animationType="slide" visible={true}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                Edit {INFO_SECTIONS.find(s => s.key === infoField)?.label || infoField}
+              </Text>
+              <Text style={styles.modalSubtitle}>{currentDept} Department</Text>
+
+              <TextInput
+                style={[styles.input, { height: 160, textAlignVertical: 'top' }]}
+                placeholder={`Enter ${INFO_SECTIONS.find(s => s.key === infoField)?.label || infoField}...`}
+                placeholderTextColor="#999"
+                value={infoValue}
+                onChangeText={setInfoValue}
+                multiline
+              />
+
+              {infoField === 'policies' && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 6 }}>
+                    Section Label
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. Laboratory Policies"
+                    placeholderTextColor="#999"
+                    value={deptInfo?.policiesLabel || ''}
+                    onChangeText={(text) => setDeptInfo((prev: any) => ({ ...prev, policiesLabel: text }))}
+                  />
+                </View>
+              )}
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => setShowInfoModal(false)}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveBtn, savingInfo && { opacity: 0.6 }]}
+                  onPress={async () => {
+                    setSavingInfo(true);
+                    try {
+                      const payload: any = { [infoField]: infoValue };
+                      if (infoField === 'policies' && deptInfo?.policiesLabel) {
+                        payload.policiesLabel = deptInfo.policiesLabel;
+                      }
+                      const updated = await departmentInfoService.update(currentDept, payload);
+                      setDeptInfo(updated);
+                      setShowInfoModal(false);
+                    } catch (error) {
+                      console.error('Failed to save department info:', error);
+                    } finally {
+                      setSavingInfo(false);
+                    }
+                  }}
+                  disabled={savingInfo}
+                >
+                  {savingInfo ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.saveBtnText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -461,6 +644,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  tabSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
+  },
+  tabBtnActive: {
+    backgroundColor: '#004BA8',
+  },
+  tabBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  tabBtnTextActive: {
+    color: '#fff',
   },
   deptFilterContainer: {
     backgroundColor: '#fff',
@@ -522,6 +735,54 @@ const styles = StyleSheet.create({
   },
   formDeptTextActive: {
     color: '#fff',
+  },
+  deptInfoSection: {
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  deptInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  deptInfoHeaderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#004BA8',
+  },
+  infoCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  infoCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  infoCardTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#004BA8',
+    flex: 1,
+  },
+  infoEditBtn: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: '#E3F2FD',
+  },
+  infoCardContent: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 22,
   },
   emptyState: {
     alignItems: 'center',

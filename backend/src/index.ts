@@ -20,6 +20,7 @@ import galleryRoutes from './routes/gallery.routes';
 import emergencyRoutes from './routes/emergency.routes';
 import calendarRoutes from './routes/calendar.routes';
 import feedbackRoutes from './routes/feedback.routes';
+import departmentInfoRoutes from './routes/department-info.routes';
 
 // Load environment variables
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/department-info', departmentInfoRoutes);
 
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

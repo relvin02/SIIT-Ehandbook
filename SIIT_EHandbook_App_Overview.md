@@ -32,6 +32,8 @@ The app supports **three user roles**, each with different access levels:
 - View school calendar, org chart, photo gallery, SIIT hymn
 - Submit feedback (with option for anonymity)
 - Location tracking (for campus safety monitoring)
+- Assigned to a **department** (BSIT, BSOA, BSTM, BSAIS, BSCRIM, BSED/BEED)
+- View department-specific org chart, vision, mission, goals, objectives & policies
 
 ### 👨‍🏫 Faculty / Staff
 - All student features **except** AI Chat Assistant and location tracking
@@ -42,7 +44,7 @@ The app supports **three user roles**, each with different access levels:
 - **Dashboard** with statistics (total sections, students, announcements)
 - Create, edit, and delete **announcements** (with push notification broadcast)
 - Manage **handbook content** (add/edit/delete sections by category)
-- Manage **user accounts** (create, edit, delete students/faculty)
+- Manage **user accounts** (create, edit, delete students/faculty) with **department assignment**
 - Monitor **student locations** on real-time satellite map
 - Issue **emergency alerts** (broadcast to all users instantly)
 - Manage **school calendar** events
@@ -107,50 +109,82 @@ The app supports **three user roles**, each with different access levels:
   - Average rating analytics
   - Filter by category and status
 
-### 3.8 🏛️ Organizational Chart
-- Visual hierarchy of school administration
-  - **Level 1:** Chairman of the Board
-  - **Level 2:** Board of Trustees
-  - **Level 3:** Officers
-  - **Level 4:** Department Heads
-- Photos and position titles for each member
-- Admin can manage the hierarchy
+### 3.8 🏛️ Organizational Chart (Two-Tab System)
+The org chart is split into **two separate views** via a tab switcher:
 
-### 3.9 🖼️ Photo Gallery
+**🏫 School Tab** — General school-wide org chart:
+  - **Level 1:** Chairman / President
+  - **Level 2:** Board of Trustees
+  - **Level 3:** Officers / Directors
+  - **Level 4:** Department Heads
+  - **Level 5:** Instructors
+
+**🏢 Department Tab** — Per-department org chart:
+  - **Level 1:** President
+  - **Level 2:** VP Academics
+  - **Level 3:** Dean
+  - **Level 4:** Instructors
+  - Admin selects which department to view/manage
+  - Students automatically see only their own department
+
+- Photos and position titles for each member
+- Admin can add, edit, and delete members per level
+
+### 3.9 📋 Department Information
+Each department has its own info section (visible on the Department tab):
+- **Vision** — Department's vision statement
+- **Mission** — Department's mission statement
+- **Goals** — Department goals
+- **Objectives** — Department objectives
+- **Policies** — Department-specific policies (e.g., "Laboratory Policies" for BSIT)
+- Admin can customize the policies section label per department
+- Admin edits content via a modal; students view it read-only
+
+**Supported Departments:**
+| Code | Department |
+|------|------------|
+| BSIT | Bachelor of Science in Information Technology |
+| BSOA | Bachelor of Science in Office Administration |
+| BSTM | Bachelor of Science in Tourism Management |
+| BSAIS | Bachelor of Science in Accounting Information System |
+| BSCRIM | Bachelor of Science in Criminology |
+| BSED/BEED | Bachelor of Secondary/Elementary Education |
+
+### 3.10 🖼️ Photo Gallery
 - Category-based photo collections
 - Fullscreen slideshow viewer with swipe navigation
 - Slide counter
 - Admin upload and management
 
-### 3.10 🎵 SIIT Hymn
+### 3.11 🎵 SIIT Hymn
 - Audio playback of the institutional hymn
 - Play/pause controls with progress bar
 
-### 3.11 🎬 Media / Videos ("Through the Years")
+### 3.12 🎬 Media / Videos ("Through the Years")
 - Video content showcasing school history and events
 - Autoplay preview on Home Screen carousel
 - Admin upload with GridFS storage
 - Streaming with seek support
 
-### 3.12 👤 User Profile Management
+### 3.13 👤 User Profile Management
 - Edit name, phone number, and avatar photo
 - Change password
 - Dark/Light mode toggle
 - Logout with confirmation
 
-### 3.13 🌙 Dark Mode
+### 3.14 🌙 Dark Mode
 - Full dark/light theme support across all screens
 - Toggle in Profile settings
 - Theme preference saved and persisted
 
-### 3.14 🔔 Push Notifications
+### 3.15 🔔 Push Notifications
 - Firebase Cloud Messaging (FCM) integration
 - Notification for new announcements
 - Notification for emergency alerts
 - Custom Android notification channel
 - Sound and vibration
 
-### 3.15 ⚡ Real-Time Updates
+### 3.16 ⚡ Real-Time Updates
 - **Socket.IO** WebSocket connection
 - Announcements appear/update/disappear instantly across all devices
 - Emergency alerts broadcast in real-time
@@ -221,7 +255,7 @@ The app supports **three user roles**, each with different access levels:
 📄 Additional Screens
 ├── SIIT Hymn
 ├── Manage Media ────── Upload videos
-├── Org Chart ──────── Manage hierarchy
+├── Org Chart ──────── Manage hierarchy (School + Department tabs)
 ├── Gallery ─────────── Manage photos
 ├── Emergency Alerts ── Create/manage alerts
 ├── School Calendar ─── Manage events
@@ -263,8 +297,8 @@ The app supports **three user roles**, each with different access levels:
 │  Collections: Users, Sections, Categories,            │
 │  Announcements, Bookmarks, Notifications,             │
 │  Media, OrgChart, Gallery, EmergencyAlerts,           │
-│  CalendarEvents, Feedback                             │
-│  (12 Collections Total)                               │
+│  CalendarEvents, Feedback, DepartmentInfo             │
+│  (13 Collections Total)                               │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -287,12 +321,13 @@ The app supports **three user roles**, each with different access levels:
 | Metric | Count |
 |--------|-------|
 | **Total Screens** | 20+ |
-| **API Endpoints** | 40+ |
-| **Database Collections** | 12 |
+| **API Endpoints** | 45+ |
+| **Database Collections** | 13 |
 | **User Roles** | 3 (Student, Faculty, Admin) |
+| **Departments** | 6 (BSIT, BSOA, BSTM, BSAIS, BSCRIM, BSED/BEED) |
 | **Real-Time Events** | 6 (Socket.IO) |
 | **Push Notification Types** | 2 (Announcements, Emergency) |
-| **Frontend Services** | 14+ |
+| **Frontend Services** | 15+ |
 | **Redux State Slices** | 5 |
 
 ---
@@ -307,6 +342,8 @@ The app supports **three user roles**, each with different access levels:
 6. **Feedback Loop** — Students can provide anonymous feedback directly to admin
 7. **Emergency Ready** — Instant broadcast of emergency alerts to all users
 8. **Modern & Professional** — Clean UI with dark mode support
+9. **Department-Organized** — Each program has its own org chart, vision, mission, goals, objectives & policies
+10. **Scalable** — Easy to add new departments or modify existing organizational structures
 
 ---
 

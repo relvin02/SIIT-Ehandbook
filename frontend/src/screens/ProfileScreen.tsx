@@ -312,45 +312,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           )}
         </View>
 
-        {/* Location Tracking Info - For Students Only */}
-        {role === 'student' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Location Tracking</Text>
-            
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons
-                  name={locationPermission === 'Granted' ? 'check-circle' : 'alert-circle'}
-                  size={20}
-                  color={locationPermission === 'Granted' ? '#4CAF50' : '#FF9800'}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Permission Status</Text>
-                  <Text style={styles.infoValue}>{locationPermission || 'Checking...'}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons
-                  name={isTrackingActive ? 'signal-variant' : 'signal-off'}
-                  size={20}
-                  color={isTrackingActive ? '#4CAF50' : '#FF9800'}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Tracking Status</Text>
-                  <Text style={styles.infoValue}>{isTrackingActive ? 'Active' : 'Inactive'}</Text>
-                </View>
-              </View>
-            </View>
-
-            <Text style={styles.helperText}>
-              📍 Location updates automatically in the background after login.
-            </Text>
-          </View>
-        )}
-
         {/* Actions */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Actions</Text>
