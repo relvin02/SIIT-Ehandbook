@@ -853,8 +853,18 @@ const ManageUsersScreen: React.FC = () => {
               </View>
               <MaterialCommunityIcons name="chevron-right" size={22} color="#999" />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.sweetCancelBtn, { marginTop: 12, alignSelf: 'center' }]} onPress={() => setShowImportPicker(false)}>
-              <Text style={styles.sweetCancelText}>Cancel</Text>
+            <TouchableOpacity
+              style={{
+                marginTop: 14,
+                backgroundColor: '#e0e0e0',
+                borderRadius: 10,
+                paddingVertical: 12,
+                paddingHorizontal: 32,
+                alignSelf: 'center',
+              }}
+              onPress={() => setShowImportPicker(false)}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#666' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
