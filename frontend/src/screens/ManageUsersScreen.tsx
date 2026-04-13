@@ -34,6 +34,7 @@ type UserAccount = {
   studentId?: string;
   email?: string;
   role: UserRole;
+  department?: string;
   createdAt: string;
 };
 
@@ -55,6 +56,8 @@ const ROLE_ICONS: Record<UserRole, string> = {
   admin: 'shield-account',
 };
 
+const DEPARTMENTS = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'] as const;
+
 const ManageUsersScreen: React.FC = () => {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,9 +72,11 @@ const ManageUsersScreen: React.FC = () => {
   const [addEmail, setAddEmail] = useState('');
   const [addPassword, setAddPassword] = useState('');
   const [addRole, setAddRole] = useState<UserRole>('student');
+  const [addDepartment, setAddDepartment] = useState<string>('');
 
   // Edit form
   const [editName, setEditName] = useState('');
+  const [editDepartment, setEditDepartment] = useState<string>('');
 
   // Reset password form
   const [resetPassword, setResetPasswordVal] = useState('');
@@ -119,6 +124,7 @@ const ManageUsersScreen: React.FC = () => {
     setAddEmail('');
     setAddPassword('');
     setAddRole('student');
+    setAddDepartment('');
   };
 
   const handleAddUser = async () => {
@@ -128,6 +134,10 @@ const ManageUsersScreen: React.FC = () => {
     }
     if (addRole === 'student' && !addStudentId.trim()) {
       showAlert('error', 'Error', 'Student ID is required');
+      return;
+    }
+    if (addRole === 'student' && !addDepartment) {
+      showAlert('error', 'Error', 'Department/Program is required for students');
       return;
     }
     if ((addRole === 'faculty' || addRole === 'admin') && !addEmail.trim()) {
@@ -147,6 +157,7 @@ const ManageUsersScreen: React.FC = () => {
       };
       if (addRole === 'student') {
         payload.studentId = addStudentId.trim();
+        payload.department = addDepartment;
       } else {
         payload.email = addEmail.trim();
       }
@@ -169,9 +180,13 @@ const ManageUsersScreen: React.FC = () => {
     }
 
     try {
-      await userManagementService.updateStudent(editingUser.id, { name: editName.trim() });
+      const updatePayload: any = { name: editName.trim() };
+      if (editingUser.role === 'student') {
+        updatePayload.department = editDepartment || undefined;
+      }
+      await userManagementService.updateStudent(editingUser.id, updatePayload);
       setUsers(users.map(u =>
-        u.id === editingUser.id ? { ...u, name: editName.trim() } : u
+        u.id === editingUser.id ? { ...u, name: editName.trim(), department: editDepartment || u.department } : u
       ));
       setEditingUser(null);
       showAlert('success', 'Success', 'Account updated');
@@ -295,6 +310,7 @@ const ManageUsersScreen: React.FC = () => {
             />
 
             {addRole === 'student' ? (
+              <>
               <TextInput
                 style={styles.input}
                 placeholder="Student ID (e.g. STU001)"
@@ -303,6 +319,23 @@ const ManageUsersScreen: React.FC = () => {
                 onChangeText={setAddStudentId}
                 autoCapitalize="characters"
               />
+
+              {/* Department Picker */}
+              <Text style={styles.fieldLabel}>Department / Program</Text>
+              <View style={styles.departmentSelector}>
+                {DEPARTMENTS.map(dept => (
+                  <TouchableOpacity
+                    key={dept}
+                    style={[styles.deptOption, addDepartment === dept && styles.deptOptionActive]}
+                    onPress={() => setAddDepartment(dept)}
+                  >
+                    <Text style={[styles.deptOptionText, addDepartment === dept && styles.deptOptionTextActive]}>
+                      {dept}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              </>
             ) : (
               <TextInput
                 style={styles.input}
@@ -356,6 +389,9 @@ const ManageUsersScreen: React.FC = () => {
                   <Text style={styles.studentIdText}>
                     {user.role === 'student' ? `ID: ${user.studentId}` : user.email}
                   </Text>
+                  {user.role === 'student' && user.department && (
+                    <Text style={styles.departmentText}>{user.department}</Text>
+                  )}
                   <Text style={styles.studentDate}>
                     Created: {new Date(user.createdAt).toLocaleDateString()}
                   </Text>
@@ -367,6 +403,7 @@ const ManageUsersScreen: React.FC = () => {
                   onPress={() => {
                     setEditingUser(user);
                     setEditName(user.name);
+                    setEditDepartment(user.department || '');
                   }}
                 >
                   <MaterialCommunityIcons name="pencil" size={16} color="#004BA8" />
@@ -412,6 +449,24 @@ const ManageUsersScreen: React.FC = () => {
                 value={editName}
                 onChangeText={setEditName}
               />
+              {editingUser.role === 'student' && (
+                <>
+                  <Text style={[styles.fieldLabel, { marginTop: 4 }]}>Department / Program</Text>
+                  <View style={styles.departmentSelector}>
+                    {DEPARTMENTS.map(dept => (
+                      <TouchableOpacity
+                        key={dept}
+                        style={[styles.deptOption, editDepartment === dept && styles.deptOptionActive]}
+                        onPress={() => setEditDepartment(dept)}
+                      >
+                        <Text style={[styles.deptOptionText, editDepartment === dept && styles.deptOptionTextActive]}>
+                          {dept}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.modalCancelBtn}
@@ -623,6 +678,38 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitButtonText: { color: '#fff', fontWeight: 'bold' },
+  departmentSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  deptOption: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  deptOptionActive: {
+    backgroundColor: '#004BA8',
+    borderColor: '#004BA8',
+  },
+  deptOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  deptOptionTextActive: {
+    color: '#fff',
+  },
+  departmentText: {
+    fontSize: 11,
+    color: '#004BA8',
+    fontWeight: '600',
+    marginTop: 2,
+  },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 16, color: '#999', marginTop: 10 },
   emptySubtext: { fontSize: 13, color: '#bbb', marginTop: 5 },

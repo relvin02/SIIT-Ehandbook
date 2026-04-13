@@ -226,7 +226,7 @@ export const userManagementService = {
     return this.getUsers();
   },
 
-  async createUser(data: { name: string; studentId?: string; email?: string; password: string; role?: string }) {
+  async createUser(data: { name: string; studentId?: string; email?: string; password: string; role?: string; department?: string }) {
     const response = await apiClient.post('/auth/users', data);
     return response.data;
   },
@@ -236,7 +236,7 @@ export const userManagementService = {
     return this.createUser(data);
   },
 
-  async updateStudent(id: string, data: { name?: string; password?: string }) {
+  async updateStudent(id: string, data: { name?: string; password?: string; department?: string }) {
     const response = await apiClient.put(`/auth/users/${id}`, data);
     return response.data;
   },
@@ -318,17 +318,18 @@ export const mediaService = {
  * Org Chart Service
  */
 export const orgChartService = {
-  async getAll() {
-    const response = await apiClient.get('/orgchart');
+  async getAll(department?: string) {
+    const params = department ? `?department=${encodeURIComponent(department)}` : '';
+    const response = await apiClient.get(`/orgchart${params}`);
     return response.data.data;
   },
 
-  async create(data: { name: string; position: string; image?: string; parentId?: string; order?: number; level?: number }) {
+  async create(data: { name: string; position: string; image?: string; parentId?: string; order?: number; level?: number; department?: string }) {
     const response = await apiClient.post('/orgchart', data);
     return response.data.data;
   },
 
-  async update(id: string, data: { name?: string; position?: string; image?: string; parentId?: string; order?: number; level?: number }) {
+  async update(id: string, data: { name?: string; position?: string; image?: string; parentId?: string; order?: number; level?: number; department?: string }) {
     const response = await apiClient.put(`/orgchart/${id}`, data);
     return response.data.data;
   },

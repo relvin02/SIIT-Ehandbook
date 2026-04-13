@@ -27,6 +27,7 @@ interface OrgMember {
   parentId: string | null;
   order: number;
   level: number;
+  department: string | null;
 }
 
 const LEVEL_LABELS: Record<number, string> = {
@@ -36,13 +37,19 @@ const LEVEL_LABELS: Record<number, string> = {
   3: 'Department Heads',
 };
 
+const DEPARTMENTS = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'] as const;
+
 const OrgChartScreen = () => {
-  const { role } = useSelector((state: any) => state.auth);
+  const { role, user } = useSelector((state: any) => state.auth);
   const isAdmin = role === 'admin';
+  const userDepartment: string | null = user?.department || null;
 
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
+    isAdmin ? null : userDepartment
+  );
 
   // Add/Edit modal
   const [showModal, setShowModal] = useState(false);
@@ -52,11 +59,13 @@ const OrgChartScreen = () => {
   const [formImage, setFormImage] = useState<string | null>(null);
   const [formLevel, setFormLevel] = useState(1);
   const [formOrder, setFormOrder] = useState(0);
+  const [formDepartment, setFormDepartment] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const fetchMembers = useCallback(async () => {
     try {
-      const data = await orgChartService.getAll();
+      const dept = isAdmin ? (selectedDepartment || undefined) : (userDepartment || undefined);
+      const data = await orgChartService.getAll(dept);
       setMembers(data);
     } catch (error) {
       console.error('Failed to fetch org chart:', error);
@@ -64,7 +73,7 @@ const OrgChartScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedDepartment, isAdmin, userDepartment]);
 
   useEffect(() => {
     fetchMembers();
@@ -97,6 +106,7 @@ const OrgChartScreen = () => {
     setFormImage(null);
     setFormLevel(level);
     setFormOrder(members.filter(m => m.level === level).length);
+    setFormDepartment(selectedDepartment);
     setShowModal(true);
   };
 
@@ -107,6 +117,7 @@ const OrgChartScreen = () => {
     setFormImage(member.image);
     setFormLevel(member.level);
     setFormOrder(member.order);
+    setFormDepartment(member.department);
     setShowModal(true);
   };
 
@@ -120,6 +131,7 @@ const OrgChartScreen = () => {
         image: formImage || undefined,
         level: formLevel,
         order: formOrder,
+        department: formDepartment || undefined,
       };
 
       if (editingMember) {
@@ -177,8 +189,47 @@ const OrgChartScreen = () => {
         <View style={styles.header}>
           <MaterialCommunityIcons name="sitemap" size={32} color="#004BA8" />
           <Text style={styles.headerTitle}>Organizational Chart</Text>
-          <Text style={styles.headerSubtitle}>SIIT Board of Trustees & Officers</Text>
+          <Text style={styles.headerSubtitle}>
+            {selectedDepartment
+              ? `${selectedDepartment} Department`
+              : 'SIIT Board of Trustees & Officers'}
+          </Text>
         </View>
+
+        {/* Department Filter Tabs (Admin) */}
+        {isAdmin && (
+          <View style={styles.deptFilterContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.deptFilterScroll}>
+              <TouchableOpacity
+                style={[styles.deptTab, !selectedDepartment && styles.deptTabActive]}
+                onPress={() => setSelectedDepartment(null)}
+              >
+                <Text style={[styles.deptTabText, !selectedDepartment && styles.deptTabTextActive]}>
+                  All / General
+                </Text>
+              </TouchableOpacity>
+              {DEPARTMENTS.map(dept => (
+                <TouchableOpacity
+                  key={dept}
+                  style={[styles.deptTab, selectedDepartment === dept && styles.deptTabActive]}
+                  onPress={() => setSelectedDepartment(dept)}
+                >
+                  <Text style={[styles.deptTabText, selectedDepartment === dept && styles.deptTabTextActive]}>
+                    {dept}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Student: Show which department they see */}
+        {!isAdmin && userDepartment && (
+          <View style={styles.deptBanner}>
+            <MaterialCommunityIcons name="school" size={16} color="#004BA8" />
+            <Text style={styles.deptBannerText}>{userDepartment} Department</Text>
+          </View>
+        )}
 
         {sortedLevels.length === 0 && !isAdmin && (
           <View style={styles.emptyState}>
@@ -319,6 +370,38 @@ const OrgChartScreen = () => {
                 onChangeText={setFormPosition}
               />
 
+              {/* Department Picker */}
+              {isAdmin && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 8 }}>
+                    Department (optional — leave empty for general)
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <TouchableOpacity
+                        style={[styles.formDeptOption, !formDepartment && styles.formDeptOptionActive]}
+                        onPress={() => setFormDepartment(null)}
+                      >
+                        <Text style={[styles.formDeptText, !formDepartment && styles.formDeptTextActive]}>
+                          General
+                        </Text>
+                      </TouchableOpacity>
+                      {DEPARTMENTS.map(dept => (
+                        <TouchableOpacity
+                          key={dept}
+                          style={[styles.formDeptOption, formDepartment === dept && styles.formDeptOptionActive]}
+                          onPress={() => setFormDepartment(dept)}
+                        >
+                          <Text style={[styles.formDeptText, formDepartment === dept && styles.formDeptTextActive]}>
+                            {dept}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+              )}
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.cancelBtn}
@@ -378,6 +461,67 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  deptFilterContainer: {
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  deptFilterScroll: {
+    paddingHorizontal: 12,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  deptTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
+    backgroundColor: '#f0f0f0',
+  },
+  deptTabActive: {
+    backgroundColor: '#004BA8',
+  },
+  deptTabText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  deptTabTextActive: {
+    color: '#fff',
+  },
+  deptBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#E3F2FD',
+    paddingVertical: 8,
+  },
+  deptBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#004BA8',
+  },
+  formDeptOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  formDeptOptionActive: {
+    backgroundColor: '#004BA8',
+    borderColor: '#004BA8',
+  },
+  formDeptText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#666',
+  },
+  formDeptTextActive: {
+    color: '#fff',
   },
   emptyState: {
     alignItems: 'center',

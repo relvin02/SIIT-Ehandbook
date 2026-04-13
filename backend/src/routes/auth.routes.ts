@@ -64,6 +64,7 @@ router.post('/login', async (req: express.Request, res: express.Response) => {
           name: user.name,
           role: user.role,
           studentId: user.studentId,
+          department: user.department,
         },
       },
     });
@@ -93,6 +94,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: express.Response) 
         name: user.name,
         role: user.role,
         studentId: user.studentId,
+        department: user.department,
         createdAt: user.createdAt,
       },
     });
@@ -141,6 +143,7 @@ router.get('/users', authenticate, authorize(['admin']), async (req: AuthRequest
         email: u.email,
         studentId: u.studentId,
         role: u.role,
+        department: u.department,
         createdAt: u.createdAt,
       })),
     });
@@ -154,7 +157,7 @@ router.get('/users', authenticate, authorize(['admin']), async (req: AuthRequest
  */
 router.post('/users', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
   try {
-    const { name, studentId, email, password, role } = req.body;
+    const { name, studentId, email, password, role, department } = req.body;
     const userRole = role || 'student';
 
     if (!['student', 'faculty', 'admin'].includes(userRole)) {
@@ -205,13 +208,14 @@ router.post('/users', authenticate, authorize(['admin']), async (req: express.Re
       name,
       studentId: studentId || undefined,
       role: userRole,
+      department: userRole === 'student' ? (department || null) : null,
     });
     await user.save();
 
     res.status(201).json({
       success: true,
       message: `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} account created`,
-      data: { id: user._id, name: user.name, email: user.email, studentId: user.studentId, role: user.role, createdAt: user.createdAt },
+      data: { id: user._id, name: user.name, email: user.email, studentId: user.studentId, role: user.role, department: user.department, createdAt: user.createdAt },
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -223,10 +227,11 @@ router.post('/users', authenticate, authorize(['admin']), async (req: express.Re
  */
 router.put('/users/:id', authenticate, authorize(['admin']), async (req: express.Request, res: express.Response) => {
   try {
-    const { name, password } = req.body;
+    const { name, password, department } = req.body;
     const updateData: any = {};
 
     if (name) updateData.name = name;
+    if (department !== undefined) updateData.department = department || null;
     if (password) {
       if (password.length < 6) {
         res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
@@ -250,7 +255,7 @@ router.put('/users/:id', authenticate, authorize(['admin']), async (req: express
     res.json({
       success: true,
       message: 'Account updated',
-      data: { id: user._id, name: user.name, studentId: user.studentId, role: user.role },
+      data: { id: user._id, name: user.name, studentId: user.studentId, role: user.role, department: user.department },
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

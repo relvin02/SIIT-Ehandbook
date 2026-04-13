@@ -8,9 +8,16 @@ const router = express.Router();
  * Get all org chart members (public - any authenticated user)
  * GET /api/orgchart
  */
-router.get('/', authenticate, async (_req: AuthRequest, res: express.Response) => {
+router.get('/', authenticate, async (req: AuthRequest, res: express.Response) => {
   try {
-    const members = await OrgChartMember.find()
+    const departmentFilter = req.query.department as string;
+    const filter: any = {};
+    if (departmentFilter) {
+      // Return members for the specific department + general members (no department)
+      filter.$or = [{ department: departmentFilter }, { department: null }, { department: { $exists: false } }];
+    }
+
+    const members = await OrgChartMember.find(filter)
       .sort({ level: 1, order: 1 })
       .exec();
 
@@ -32,7 +39,7 @@ router.get('/', authenticate, async (_req: AuthRequest, res: express.Response) =
  */
 router.post('/', authenticate, authorize(['admin']), async (req: AuthRequest, res: express.Response) => {
   try {
-    const { name, position, image, parentId, order, level } = req.body;
+    const { name, position, image, parentId, order, level, department } = req.body;
 
     if (!name || !position) {
       res.status(400).json({
@@ -49,6 +56,7 @@ router.post('/', authenticate, authorize(['admin']), async (req: AuthRequest, re
       parentId: parentId || null,
       order: order || 0,
       level: level ?? 0,
+      department: department || null,
     });
 
     await member.save();
@@ -72,7 +80,7 @@ router.post('/', authenticate, authorize(['admin']), async (req: AuthRequest, re
 router.put('/:id', authenticate, authorize(['admin']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { id } = req.params;
-    const { name, position, image, parentId, order, level } = req.body;
+    const { name, position, image, parentId, order, level, department } = req.body;
 
     const member = await OrgChartMember.findByIdAndUpdate(
       id,
@@ -83,6 +91,7 @@ router.put('/:id', authenticate, authorize(['admin']), async (req: AuthRequest, 
         ...(parentId !== undefined && { parentId }),
         ...(order !== undefined && { order }),
         ...(level !== undefined && { level }),
+        ...(department !== undefined && { department: department || null }),
         updatedAt: new Date(),
       },
       { new: true }

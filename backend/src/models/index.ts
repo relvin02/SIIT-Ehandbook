@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'admin', 'faculty'],
     default: 'student',
   },
+  department: {
+    type: String,
+    enum: ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED', null],
+    default: null,
+  },
   avatar: String,
   phoneNumber: String,
   expoPushToken: {
@@ -271,6 +276,10 @@ const orgChartMemberSchema = new mongoose.Schema({
   level: {
     type: Number,
     default: 0, // 0 = top (chairman), 1 = board members, 2 = officers, etc.
+  },
+  department: {
+    type: String,
+    default: null, // null = general (shared across all), set = department-specific
   },
   createdAt: {
     type: Date,
