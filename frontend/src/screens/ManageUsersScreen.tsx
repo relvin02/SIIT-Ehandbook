@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import { userManagementService } from '../services/apiClient';
 
 type AlertType = 'success' | 'error' | 'confirm';
@@ -240,7 +239,9 @@ const ManageUsersScreen: React.FC = () => {
       if (result.canceled || !result.assets?.[0]) return;
 
       const file = result.assets[0];
-      const content = await FileSystem.readAsStringAsync(file.uri);
+      // Use fetch to read file content (works with content:// URIs on Android)
+      const response = await fetch(file.uri);
+      const content = await response.text();
       const lines = content.split(/\r?\n/).filter(line => line.trim());
 
       if (lines.length < 2) {
@@ -291,7 +292,7 @@ const ManageUsersScreen: React.FC = () => {
         }
       });
     } catch (error: any) {
-      showAlert('error', 'Error', 'Failed to read file');
+      showAlert('error', 'Error', error?.message || 'Failed to read file');
     }
   };
 
