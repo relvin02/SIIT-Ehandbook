@@ -25,6 +25,8 @@ type AlertState = {
   title: string;
   message: string;
   onConfirm?: () => void;
+  confirmText?: string;
+  confirmColor?: string;
 };
 
 type UserRole = 'student' | 'faculty' | 'admin';
@@ -93,8 +95,8 @@ const ManageUsersScreen: React.FC = () => {
     message: '',
   });
 
-  const showAlert = (type: AlertType, title: string, message: string, onConfirm?: () => void) => {
-    setAlertState({ visible: true, type, title, message, onConfirm });
+  const showAlert = (type: AlertType, title: string, message: string, onConfirm?: () => void, confirmText?: string, confirmColor?: string) => {
+    setAlertState({ visible: true, type, title, message, onConfirm, confirmText, confirmColor });
   };
 
   const closeAlert = () => {
@@ -290,7 +292,7 @@ const ManageUsersScreen: React.FC = () => {
         } finally {
           setImporting(false);
         }
-      });
+      }, 'Yes, Import', '#2E7D32');
     } catch (error: any) {
       showAlert('error', 'Error', error?.message || 'Failed to read file');
     }
@@ -641,13 +643,13 @@ const ManageUsersScreen: React.FC = () => {
                     <Text style={styles.sweetCancelText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.sweetConfirmBtn, { backgroundColor: '#FF6B6B' }]}
+                    style={[styles.sweetConfirmBtn, { backgroundColor: alertState.confirmColor || '#FF6B6B' }]}
                     onPress={() => {
                       closeAlert();
                       alertState.onConfirm?.();
                     }}
                   >
-                    <Text style={styles.sweetConfirmText}>Yes, Delete</Text>
+                    <Text style={styles.sweetConfirmText}>{alertState.confirmText || 'Confirm'}</Text>
                   </TouchableOpacity>
                 </>
               ) : (
@@ -690,12 +692,14 @@ const ManageUsersScreen: React.FC = () => {
                   ))}
                 </ScrollView>
               )}
-              <TouchableOpacity
-                style={[styles.sweetConfirmBtn, { backgroundColor: '#4CAF50' }]}
-                onPress={() => setImportResult(null)}
-              >
-                <Text style={styles.sweetConfirmText}>OK</Text>
-              </TouchableOpacity>
+              <View style={styles.sweetButtons}>
+                <TouchableOpacity
+                  style={[styles.sweetConfirmBtn, { backgroundColor: '#4CAF50' }]}
+                  onPress={() => setImportResult(null)}
+                >
+                  <Text style={styles.sweetConfirmText}>OK</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
