@@ -124,6 +124,21 @@ const ManageUsersScreen: React.FC = () => {
     ? users
     : users.filter(u => u.role === activeTab);
 
+  // Group students by department when student tab is active
+  const groupedByDept = activeTab === 'student'
+    ? filteredUsers.reduce<Record<string, UserAccount[]>>((acc, user) => {
+        const dept = user.department || 'Unassigned';
+        if (!acc[dept]) acc[dept] = [];
+        acc[dept].push(user);
+        return acc;
+      }, {})
+    : null;
+
+  const deptOrder = [...DEPARTMENTS, 'Unassigned'] as string[];
+  const sortedDepts = groupedByDept
+    ? deptOrder.filter(d => groupedByDept[d]?.length > 0)
+    : [];
+
   const resetAddForm = () => {
     setAddName('');
     setAddStudentId('');
@@ -459,7 +474,67 @@ const ManageUsersScreen: React.FC = () => {
             <Text style={styles.emptyText}>No {activeTab === 'all' ? '' : ROLE_LABELS[activeTab as UserRole].toLowerCase() + ' '}accounts yet</Text>
             <Text style={styles.emptySubtext}>Tap "Add Account" to create one</Text>
           </View>
+        ) : groupedByDept ? (
+          // Students grouped by department
+          sortedDepts.map(dept => (
+            <View key={dept}>
+              <View style={styles.deptSectionHeader}>
+                <MaterialCommunityIcons name="school" size={18} color="#004BA8" />
+                <Text style={styles.deptSectionTitle}>{dept}</Text>
+                <View style={styles.deptSectionBadge}>
+                  <Text style={styles.deptSectionCount}>{groupedByDept[dept].length}</Text>
+                </View>
+              </View>
+              {groupedByDept[dept].map(user => (
+                <View key={user.id} style={[styles.studentCard, { borderLeftColor: ROLE_COLORS[user.role] }]}>
+                  <View style={styles.studentInfo}>
+                    <View style={[styles.studentAvatar, { backgroundColor: ROLE_COLORS[user.role] }]}>
+                      <MaterialCommunityIcons name={ROLE_ICONS[user.role] as any} size={24} color="#fff" />
+                    </View>
+                    <View style={styles.studentDetails}>
+                      <Text style={styles.studentName}>{user.name}</Text>
+                      <Text style={styles.studentIdText}>ID: {user.studentId}</Text>
+                      <Text style={styles.studentDate}>
+                        Created: {new Date(user.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.editBtn]}
+                      onPress={() => {
+                        setEditingUser(user);
+                        setEditName(user.name);
+                        setEditDepartment(user.department || '');
+                      }}
+                    >
+                      <MaterialCommunityIcons name="pencil" size={16} color="#004BA8" />
+                      <Text style={styles.editBtnText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.resetBtn]}
+                      onPress={() => {
+                        setResetUser(user);
+                        setResetPasswordVal('');
+                      }}
+                    >
+                      <MaterialCommunityIcons name="key-variant" size={16} color="#FF9800" />
+                      <Text style={styles.resetBtnText}>Reset</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.deleteBtn]}
+                      onPress={() => handleDeleteUser(user)}
+                    >
+                      <MaterialCommunityIcons name="trash-can" size={16} color="#FF6B6B" />
+                      <Text style={styles.deleteBtnText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ))
         ) : (
+          // All / Faculty / Admin — flat list
           filteredUsers.map(user => (
             <View key={user.id} style={[styles.studentCard, { borderLeftColor: ROLE_COLORS[user.role] }]}>
               <View style={styles.studentInfo}>
@@ -849,6 +924,34 @@ const styles = StyleSheet.create({
     color: '#004BA8',
     fontWeight: '600',
     marginTop: 2,
+  },
+  deptSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#004BA8',
+  },
+  deptSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#004BA8',
+    marginLeft: 8,
+    flex: 1,
+  },
+  deptSectionBadge: {
+    backgroundColor: '#004BA8',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  deptSectionCount: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
   },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 16, color: '#999', marginTop: 10 },
