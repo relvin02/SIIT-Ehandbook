@@ -325,22 +325,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionItem, { backgroundColor: theme.card }]}>
-            <MaterialCommunityIcons name="bell" size={20} color={theme.primary} />
-            <Text style={[styles.actionText, { color: theme.text }]}>Notification Preferences</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textMuted} />
-          </TouchableOpacity>
-
           <TouchableOpacity style={[styles.actionItem, { backgroundColor: theme.card }]} onPress={toggleTheme}>
             <MaterialCommunityIcons name={isDark ? 'weather-sunny' : 'weather-night'} size={20} color={isDark ? '#FFB300' : '#5C6BC0'} />
             <Text style={[styles.actionText, { color: theme.text }]}>{isDark ? 'Light Mode' : 'Dark Mode'}</Text>
             <MaterialCommunityIcons name={isDark ? 'toggle-switch' : 'toggle-switch-off'} size={28} color={isDark ? '#4CAF50' : theme.textMuted} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.actionItem, { backgroundColor: theme.card }]}>
-            <MaterialCommunityIcons name="help-circle" size={20} color={theme.primary} />
-            <Text style={[styles.actionText, { color: theme.text }]}>Help & Support</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textMuted} />
           </TouchableOpacity>
         </View>
 
