@@ -31,18 +31,18 @@ interface OrgMember {
 }
 
 const SCHOOL_LEVEL_LABELS: Record<number, string> = {
-  0: 'Chairman / President',
-  1: 'Board of Trustees',
-  2: 'Officers / Directors',
-  3: 'Department Heads',
-  4: 'Instructors',
+  0: 'Board of Trustees',
+  1: 'Executive Committee',
+  2: 'Academic',
+  3: 'Administrative',
 };
 
 const DEPT_LEVEL_LABELS: Record<number, string> = {
   0: 'President',
   1: 'VP Academics',
   2: 'Dean',
-  3: 'Instructors',
+  3: 'Program Head',
+  4: 'Faculties',
 };
 
 const DEPARTMENTS = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'] as const;
