@@ -252,12 +252,12 @@ export const userManagementService = {
   },
 
   async bulkImport(students: { name: string; studentId: string; department?: string; password?: string }[]) {
-    const response = await apiClient.post('/auth/users/bulk', { students });
+    const response = await apiClient.post('/auth/users/bulk', { students }, { timeout: 60000 });
     return response.data;
   },
 
   async bulkImportFaculty(faculty: { name: string; email: string; password?: string }[]) {
-    const response = await apiClient.post('/auth/users/bulk-faculty', { faculty });
+    const response = await apiClient.post('/auth/users/bulk-faculty', { faculty }, { timeout: 60000 });
     return response.data;
   },
 };

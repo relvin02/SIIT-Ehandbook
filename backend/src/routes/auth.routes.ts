@@ -241,49 +241,100 @@ router.post('/users/bulk', authenticate, authorize(['admin']), async (req: expre
     }
 
     const results: { success: any[]; failed: any[] } = { success: [], failed: [] };
+    const validDepts = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'];
 
+    // Stage 1: Validate all records first
+    const validStudents: any[] = [];
     for (const student of students) {
+      const { name, studentId, department, password } = student;
+      if (!name || !studentId) {
+        results.failed.push({ studentId: studentId || '?', name: name || '?', reason: 'Name and Student ID are required' });
+        continue;
+      }
+
+      if (department && !validDepts.includes(department)) {
+        results.failed.push({ studentId, name, reason: `Invalid department: ${department}` });
+        continue;
+      }
+
+      validStudents.push({ name, studentId, department, password });
+    }
+
+    // Stage 2: Check for duplicates in batch
+    const studentIds = validStudents.map(s => s.studentId);
+    const existingByIds = await User.find({ studentId: { $in: studentIds } });
+    const existingIdMap = new Map(existingByIds.map(u => [u.studentId, true]));
+
+    const studentsToHash: any[] = [];
+    for (const student of validStudents) {
+      if (existingIdMap.has(student.studentId)) {
+        results.failed.push({ studentId: student.studentId, name: student.name, reason: 'Student ID already exists' });
+        continue;
+      }
+
+      const userEmail = `${student.studentId.toLowerCase()}@siit.edu`;
+      studentsToHash.push({ ...student, userEmail });
+    }
+
+    // Stage 3: Check email duplicates
+    const emails = studentsToHash.map(s => s.userEmail);
+    const existingByEmails = await User.find({ email: { $in: emails } });
+    const existingEmailMap = new Map(existingByEmails.map(u => [u.email, true]));
+
+    const studentsToImport: any[] = [];
+    for (const student of studentsToHash) {
+      if (existingEmailMap.has(student.userEmail)) {
+        results.failed.push({ studentId: student.studentId, name: student.name, reason: 'Email already exists' });
+        continue;
+      }
+      studentsToImport.push(student);
+    }
+
+    // Stage 4: Hash passwords in parallel
+    const hashPromises = studentsToImport.map(s => {
+      const pw = s.password || s.studentId;
+      return bcrypt.hash(pw, 10).then(hash => ({ ...s, password_hash: hash }));
+    });
+
+    const studentsWithHashes = await Promise.all(hashPromises);
+
+    // Stage 5: Insert all records in batch
+    if (studentsWithHashes.length > 0) {
+      const userDocs = studentsWithHashes.map(s => ({
+        email: s.userEmail,
+        password_hash: s.password_hash,
+        name: s.name,
+        studentId: s.studentId,
+        role: 'student',
+        department: s.department || null,
+      }));
+
       try {
-        const { name, studentId, department, password } = student;
-        if (!name || !studentId) {
-          results.failed.push({ studentId: studentId || '?', name: name || '?', reason: 'Name and Student ID are required' });
-          continue;
-        }
-
-        const validDepts = ['BSIT', 'BSOA', 'BSTM', 'BSAIS', 'BSCRIM', 'BSED/BEED'];
-        if (department && !validDepts.includes(department)) {
-          results.failed.push({ studentId, name, reason: `Invalid department: ${department}` });
-          continue;
-        }
-
-        // Check duplicates
-        const existingById = await User.findOne({ studentId });
-        if (existingById) {
-          results.failed.push({ studentId, name, reason: 'Student ID already exists' });
-          continue;
-        }
-
-        const userEmail = `${studentId.toLowerCase()}@siit.edu`;
-        const existingByEmail = await User.findOne({ email: userEmail });
-        if (existingByEmail) {
-          results.failed.push({ studentId, name, reason: 'Email already exists' });
-          continue;
-        }
-
-        const pw = password || studentId;
-        const password_hash = await bcrypt.hash(pw, 10);
-        const user = new User({
-          email: userEmail,
-          password_hash,
-          name,
-          studentId,
-          role: 'student',
-          department: department || null,
-        });
-        await user.save();
-        results.success.push({ id: user._id, name: user.name, studentId: user.studentId, department: user.department });
+        const createdUsers = await User.insertMany(userDocs);
+        results.success.push(...createdUsers.map(u => ({
+          id: u._id,
+          name: u.name,
+          studentId: u.studentId,
+          department: u.department,
+        })));
       } catch (err: any) {
-        results.failed.push({ studentId: student.studentId || '?', name: student.name || '?', reason: err.message });
+        // Handle bulk insert errors (some records might fail due to unique index)
+        for (const student of studentsWithHashes) {
+          try {
+            const user = new User({
+              email: student.userEmail,
+              password_hash: student.password_hash,
+              name: student.name,
+              studentId: student.studentId,
+              role: 'student',
+              department: student.department || null,
+            });
+            await user.save();
+            results.success.push({ id: user._id, name: user.name, studentId: user.studentId, department: user.department });
+          } catch (e: any) {
+            results.failed.push({ studentId: student.studentId, name: student.name, reason: e.message });
+          }
+        }
       }
     }
 
@@ -317,32 +368,71 @@ router.post('/users/bulk-faculty', authenticate, authorize(['admin']), async (re
 
     const results: { success: any[]; failed: any[] } = { success: [], failed: [] };
 
+    // Stage 1: Validate all records first
+    const validFaculty: any[] = [];
     for (const member of faculty) {
+      const { name, email, password } = member;
+      if (!name || !email) {
+        results.failed.push({ email: email || '?', name: name || '?', reason: 'Name and Email are required' });
+        continue;
+      }
+      validFaculty.push({ name, email: email.toLowerCase(), password });
+    }
+
+    // Stage 2: Check for duplicate emails in batch
+    const emails = validFaculty.map(f => f.email);
+    const existingByEmails = await User.find({ email: { $in: emails } });
+    const existingEmailMap = new Map(existingByEmails.map(u => [u.email, true]));
+
+    const facultyToHash: any[] = [];
+    for (const member of validFaculty) {
+      if (existingEmailMap.has(member.email)) {
+        results.failed.push({ email: member.email, name: member.name, reason: 'Email already exists' });
+        continue;
+      }
+      facultyToHash.push(member);
+    }
+
+    // Stage 3: Hash passwords in parallel
+    const hashPromises = facultyToHash.map(f => {
+      const pw = f.password || 'faculty123';
+      return bcrypt.hash(pw, 10).then(hash => ({ ...f, password_hash: hash }));
+    });
+
+    const facultyWithHashes = await Promise.all(hashPromises);
+
+    // Stage 4: Insert all records in batch
+    if (facultyWithHashes.length > 0) {
+      const userDocs = facultyWithHashes.map(f => ({
+        email: f.email,
+        password_hash: f.password_hash,
+        name: f.name,
+        role: 'faculty',
+      }));
+
       try {
-        const { name, email, password } = member;
-        if (!name || !email) {
-          results.failed.push({ email: email || '?', name: name || '?', reason: 'Name and Email are required' });
-          continue;
-        }
-
-        const existingByEmail = await User.findOne({ email: email.toLowerCase() });
-        if (existingByEmail) {
-          results.failed.push({ email, name, reason: 'Email already exists' });
-          continue;
-        }
-
-        const pw = password || 'faculty123';
-        const password_hash = await bcrypt.hash(pw, 10);
-        const user = new User({
-          email: email.toLowerCase(),
-          password_hash,
-          name,
-          role: 'faculty',
-        });
-        await user.save();
-        results.success.push({ id: user._id, name: user.name, email: user.email });
+        const createdUsers = await User.insertMany(userDocs);
+        results.success.push(...createdUsers.map(u => ({
+          id: u._id,
+          name: u.name,
+          email: u.email,
+        })));
       } catch (err: any) {
-        results.failed.push({ email: member.email || '?', name: member.name || '?', reason: err.message });
+        // Handle bulk insert errors (some records might fail due to unique index)
+        for (const member of facultyWithHashes) {
+          try {
+            const user = new User({
+              email: member.email,
+              password_hash: member.password_hash,
+              name: member.name,
+              role: 'faculty',
+            });
+            await user.save();
+            results.success.push({ id: user._id, name: user.name, email: user.email });
+          } catch (e: any) {
+            results.failed.push({ email: member.email, name: member.name, reason: e.message });
+          }
+        }
       }
     }
 
